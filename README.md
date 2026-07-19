@@ -4,16 +4,21 @@ Visible Thinking Designer is a tutor-facing learning-design workbench for post-s
 
 It helps an educator redesign one real task so consequential learner thinking becomes visible across the learning journey—not only in the finished product.
 
-## Stage 1 status
+## Current build status
 
-This repository currently contains the static end-to-end prototype authorised by Doc 04.
+Stage 1 is complete. The Stage 2 GPT-5.6 core is implemented; live-model Gate
+2 verification still requires a server-side `OPENAI_API_KEY`.
 
 Included:
 
 - landing page and four-screen workbench;
 - blank-task entry and three canonical scenarios;
 - typed project, diagnosis and moment structures;
-- deterministic mock clarification, diagnosis and moment data;
+- server-side OpenAI Responses API integration;
+- versioned clarify, diagnose and moments prompts;
+- strict structured-output and request schemas;
+- loading, retry, typed failure and local-draft recovery states;
+- deterministic mock data retained as the safe fallback;
 - editable moments and plan;
 - browser-local project persistence;
 - recent plans and duplication;
@@ -22,8 +27,6 @@ Included:
 
 Not included:
 
-- OpenAI or GPT-5.6 integration;
-- final prompts;
 - file upload;
 - accounts or external databases;
 - learner records;
@@ -56,14 +59,20 @@ Requirements:
 - Node.js 22.13 or later;
 - pnpm 11.
 
-Install and run:
+Install, configure and run:
 
 ```bash
 pnpm install
+cp .env.example .env.local
+# Add OPENAI_API_KEY to .env.local
 pnpm dev
 ```
 
 Then open `http://localhost:3000`.
+
+`OPENAI_MODEL` defaults to `gpt-5.6`. The API key is read only by server-side
+route handlers. If it is absent or the API is unavailable, the application
+preserves the project and offers the deterministic local draft.
 
 Validation:
 
@@ -73,16 +82,20 @@ pnpm lint
 pnpm build
 ```
 
-## Stage 1 architecture
+## Current architecture
 
 - Next.js App Router with TypeScript and React
 - vinext/Vite deployment build
+- official OpenAI JavaScript SDK and Responses API
+- Zod runtime validation and structured outputs
+- three server-side design endpoints under `app/api/design`
+- versioned prompts under `lib/prompts`
 - typed fixture data in `lib/fixtures.ts`
 - versioned local browser storage in `lib/storage.ts`
 - deterministic plan rendering from confirmed structured state
 - CSS tokens and print styling in `app/globals.css`
 
-The OpenAI API key is not required in Stage 1. No model request is made.
+No task body is logged by the application. Model requests set `store: false`.
 
 ## Canonical demonstration scenarios
 
@@ -111,7 +124,7 @@ The prototype:
 
 ## Judge testing path
 
-For Stage 1:
+With `OPENAI_API_KEY` configured:
 
 1. Open the landing page.
 2. Select each of the three example scenarios in turn.
@@ -122,4 +135,6 @@ For Stage 1:
 7. Open the final plan.
 8. Return home and reopen the locally saved plan.
 
-The Stage 2 GPT-5.6 path is intentionally unavailable until separately authorised.
+To test failure recovery, temporarily omit the API key or interrupt the model
+request. The task remains saved and the interface offers retry or continuation
+with the local draft.

@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "./app-shell";
+import { ModelStatus } from "./model-status";
+import { requestClarification, requestDiagnosis } from "@/lib/model-client";
+import { updateGenerationStage } from "@/lib/model-state";
 import { loadProject, saveProject } from "@/lib/storage";
 import type {
   ClarificationQuestion,
@@ -15,6 +18,98 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
   const [answer, setAnswer] = useState("");
   const [phase, setPhase] = useState<"clarify" | "diagnose">("clarify");
 
+  const generateDiagnosis = useCallback(
+    async (baseProject: VisibleThinkingProject) => {
+      const loading = saveProject(
+        updateGenerationStage(baseProject, "diagnose", "loading"),
+      );
+      setProject(loading);
+      setPhase("diagnose");
+
+      const result = await requestDiagnosis(loading);
+      if (!result.ok) {
+        const failed = saveProject(
+          updateGenerationStage(
+            loading,
+            "diagnose",
+            "failed",
+            result.error,
+          ),
+        );
+        setProject(failed);
+        return;
+      }
+
+      const stageUpdated = updateGenerationStage(
+        loading,
+        "diagnose",
+        "succeeded",
+      );
+      const succeeded = saveProject({
+        ...stageUpdated,
+        diagnosis: { ...result.data, tutorConfirmed: false },
+        generation: {
+          ...stageUpdated.generation!,
+          model: result.meta.model,
+          promptVersion: result.meta.promptVersion,
+        },
+      });
+      setProject(succeeded);
+    },
+    [],
+  );
+
+  const generateClarification = useCallback(
+    async (baseProject: VisibleThinkingProject) => {
+      const loading = saveProject(
+        updateGenerationStage(baseProject, "clarify", "loading"),
+      );
+      setProject(loading);
+      setPhase("clarify");
+
+      const result = await requestClarification(loading);
+      if (!result.ok) {
+        const failed = saveProject(
+          updateGenerationStage(
+            loading,
+            "clarify",
+            "failed",
+            result.error,
+          ),
+        );
+        setProject(failed);
+        return;
+      }
+
+      const completed = result.data.questions.length === 0;
+      const stageUpdated = updateGenerationStage(
+        loading,
+        "clarify",
+        "succeeded",
+      );
+      const succeeded = saveProject({
+        ...stageUpdated,
+        clarification: {
+          taskReflection: result.data.taskReflection,
+          questions: result.data.questions.map((question) => ({
+            ...question,
+            skipped: false,
+          })),
+          completed,
+        },
+        generation: {
+          ...stageUpdated.generation!,
+          model: result.meta.model,
+          promptVersion: result.meta.promptVersion,
+        },
+      });
+      setProject(succeeded);
+      setQuestionIndex(0);
+      if (completed) await generateDiagnosis(succeeded);
+    },
+    [generateDiagnosis],
+  );
+
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -25,19 +120,42 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
         return;
       }
       setProject(stored);
-      if (stored.clarification.completed) setPhase("diagnose");
+      const firstUnanswered = stored.clarification.questions.findIndex(
+        (question) => !question.answer && !question.skipped,
+      );
+      setQuestionIndex(firstUnanswered < 0 ? 0 : firstUnanswered);
+      if (stored.clarification.completed) {
+        setPhase("diagnose");
+        if (
+          stored.generation?.diagnose.status === "idle" ||
+          stored.generation?.diagnose.status === "loading"
+        ) {
+          void generateDiagnosis(stored);
+        }
+      } else if (
+        stored.generation?.clarify.status === "idle" ||
+        stored.generation?.clarify.status === "loading"
+      ) {
+        void generateClarification(stored);
+      }
     });
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [generateClarification, generateDiagnosis, projectId]);
 
   if (!project) return <div className="page-loading">Opening your design…</div>;
 
   const questions = project.clarification.questions;
   const currentQuestion = questions[questionIndex];
+  const clarifyStatus = project.generation?.clarify.status;
+  const diagnoseStatus = project.generation?.diagnose.status;
+  const clarifyBlocked =
+    clarifyStatus === "loading" || clarifyStatus === "failed";
+  const diagnoseBlocked =
+    diagnoseStatus === "loading" || diagnoseStatus === "failed";
 
-  const commitQuestion = (skipped: boolean) => {
+  const commitQuestion = async (skipped: boolean) => {
     const nextQuestions = questions.map((question, index) =>
       index === questionIndex
         ? {
@@ -58,8 +176,16 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
     });
     setProject(updated);
     setAnswer("");
-    if (isLast) setPhase("diagnose");
+    if (isLast) await generateDiagnosis(updated);
     else setQuestionIndex((index) => index + 1);
+  };
+
+  const continueWithLocalDraft = (stage: "clarify" | "diagnose") => {
+    const updated = saveProject(
+      updateGenerationStage(project, stage, "fallback"),
+    );
+    setProject(updated);
+    setPhase(stage === "clarify" ? "clarify" : "diagnose");
   };
 
   const updateDiagnosis = <K extends keyof TaskDiagnosis>(
@@ -98,7 +224,27 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           : "Find the consequential work that is still hidden."
       }
     >
-      {phase === "clarify" ? (
+      {phase === "clarify" && clarifyStatus ? (
+        <ModelStatus
+          error={project.generation?.clarify.error}
+          label="Reading the task and identifying only what is missing…"
+          onFallback={() => continueWithLocalDraft("clarify")}
+          onRetry={() => void generateClarification(project)}
+          status={clarifyStatus}
+        />
+      ) : null}
+
+      {phase === "diagnose" && diagnoseStatus ? (
+        <ModelStatus
+          error={project.generation?.diagnose.error}
+          label="Locating the consequential thinking the current evidence cannot show…"
+          onFallback={() => continueWithLocalDraft("diagnose")}
+          onRetry={() => void generateDiagnosis(project)}
+          status={diagnoseStatus}
+        />
+      ) : null}
+
+      {phase === "clarify" && !clarifyBlocked ? (
         <ClarifyPhase
           answer={answer}
           currentQuestion={currentQuestion}
@@ -108,7 +254,9 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           reflection={project.clarification.taskReflection}
           total={questions.length}
         />
-      ) : project.diagnosis ? (
+      ) : phase === "diagnose" &&
+        !diagnoseBlocked &&
+        project.diagnosis ? (
         <div className="diagnosis-layout">
           <section className="diagnosis-main">
             <div className="summary-card">
@@ -172,7 +320,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
         </div>
       ) : null}
 
-      {phase === "diagnose" ? (
+      {phase === "diagnose" && !diagnoseBlocked ? (
         <div className="action-row">
           <a className="button secondary" href="/design/new">
             Edit task
@@ -205,9 +353,16 @@ function ClarifyPhase({
   total: number;
   answer: string;
   onAnswer: (value: string) => void;
-  onCommit: (skipped: boolean) => void;
+  onCommit: (skipped: boolean) => Promise<void>;
 }) {
-  if (!currentQuestion) return null;
+  if (!currentQuestion) {
+    return (
+      <section className="reflection-card">
+        <p className="eyebrow">No clarification needed</p>
+        <p>{reflection || "Your task has enough detail to diagnose directly."}</p>
+      </section>
+    );
+  }
   return (
     <div className="clarify-layout">
       <section className="reflection-card">
@@ -240,7 +395,7 @@ function ClarifyPhase({
         <div className="question-actions">
           <button
             className="button text-button"
-            onClick={() => onCommit(true)}
+            onClick={() => void onCommit(true)}
             type="button"
           >
             Skip this question
@@ -248,7 +403,7 @@ function ClarifyPhase({
           <button
             className="button primary"
             disabled={answer.trim().length < 3}
-            onClick={() => onCommit(false)}
+            onClick={() => void onCommit(false)}
             type="button"
           >
             {index === total - 1 ? "Review diagnosis" : "Next question"}{" "}

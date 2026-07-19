@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "./app-shell";
 import { blankProject, projectFromFixture } from "@/lib/fixtures";
+import { createGenerationState } from "@/lib/model-state";
 import { saveProject } from "@/lib/storage";
 import type {
   AiPosition,
@@ -164,6 +165,7 @@ export function TaskScreen() {
     const ready = saveProject({
       ...makeGenericDesign(project),
       status: "clarifying",
+      generation: createGenerationState(),
     });
     window.location.href = `/design/${ready.id}/diagnose`;
   };

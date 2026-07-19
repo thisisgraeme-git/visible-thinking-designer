@@ -78,6 +78,39 @@ export interface VisibleThinkingMoment {
   source: "model" | "tutor";
 }
 
+export type GenerationStatus =
+  | "idle"
+  | "loading"
+  | "succeeded"
+  | "failed"
+  | "fallback";
+
+export interface GenerationError {
+  code:
+    | "configuration_error"
+    | "invalid_request"
+    | "model_refusal"
+    | "schema_error"
+    | "rate_limited"
+    | "service_unavailable"
+    | "unknown_error";
+  message: string;
+  retryable: boolean;
+}
+
+export interface GenerationStage {
+  status: GenerationStatus;
+  error?: GenerationError;
+}
+
+export interface ProjectGeneration {
+  promptVersion: string;
+  model?: string;
+  clarify: GenerationStage;
+  diagnose: GenerationStage;
+  moments: GenerationStage;
+}
+
 export interface VisibleThinkingProject {
   schemaVersion: "0.1";
   id: string;
@@ -113,7 +146,49 @@ export interface VisibleThinkingProject {
     cautions: string[];
     useTomorrowSummary?: string;
   };
+  generation?: ProjectGeneration;
 }
+
+export interface ClarifyOutput {
+  taskReflection: string;
+  questions: Array<{
+    id: string;
+    question: string;
+    whyItMatters: string;
+  }>;
+}
+
+export type DiagnosisOutput = Omit<TaskDiagnosis, "tutorConfirmed">;
+
+export interface MomentsOutput {
+  evidenceShift: {
+    from: string;
+    toward: string;
+  };
+  feedbackPattern: string;
+  moments: VisibleThinkingMoment[];
+  implementationNotes: string[];
+  cautions: string[];
+  useTomorrowSummary: string;
+}
+
+export type ModelStage = "clarify" | "diagnose" | "moments";
+
+export interface ModelSuccess<T> {
+  ok: true;
+  data: T;
+  meta: {
+    model: string;
+    promptVersion: string;
+  };
+}
+
+export interface ModelFailure {
+  ok: false;
+  error: GenerationError;
+}
+
+export type ModelResult<T> = ModelSuccess<T> | ModelFailure;
 
 export interface ScenarioFixture {
   source: Exclude<ProjectSource, "blank">;

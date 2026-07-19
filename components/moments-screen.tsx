@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "./app-shell";
+import { ModelStatus } from "./model-status";
+import { requestMoments } from "@/lib/model-client";
+import { updateGenerationStage } from "@/lib/model-state";
 import { loadProject, saveProject } from "@/lib/storage";
 import type {
   VisibleCondition,
@@ -20,6 +23,53 @@ const conditionLabels: Record<VisibleCondition, string> = {
 export function MomentsScreen({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<VisibleThinkingProject>();
 
+  const generateMoments = useCallback(
+    async (baseProject: VisibleThinkingProject) => {
+      const loading = saveProject(
+        updateGenerationStage(baseProject, "moments", "loading"),
+      );
+      setProject(loading);
+
+      const result = await requestMoments(loading);
+      if (!result.ok) {
+        const failed = saveProject(
+          updateGenerationStage(
+            loading,
+            "moments",
+            "failed",
+            result.error,
+          ),
+        );
+        setProject(failed);
+        return;
+      }
+
+      const stageUpdated = updateGenerationStage(
+        loading,
+        "moments",
+        "succeeded",
+      );
+      const succeeded = saveProject({
+        ...stageUpdated,
+        moments: result.data.moments,
+        plan: {
+          evidenceShift: result.data.evidenceShift,
+          feedbackPattern: result.data.feedbackPattern,
+          implementationNotes: result.data.implementationNotes,
+          cautions: result.data.cautions,
+          useTomorrowSummary: result.data.useTomorrowSummary,
+        },
+        generation: {
+          ...stageUpdated.generation!,
+          model: result.meta.model,
+          promptVersion: result.meta.promptVersion,
+        },
+      });
+      setProject(succeeded);
+    },
+    [],
+  );
+
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -29,14 +79,35 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
         window.location.href = "/";
         return;
       }
+      if (!stored.diagnosis?.tutorConfirmed) {
+        window.location.href = `/design/${stored.id}/diagnose`;
+        return;
+      }
       setProject(stored);
+      if (
+        stored.generation?.moments.status === "idle" ||
+        stored.generation?.moments.status === "loading"
+      ) {
+        void generateMoments(stored);
+      }
     });
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [generateMoments, projectId]);
 
   if (!project) return <div className="page-loading">Opening moments…</div>;
+
+  const momentsStatus = project.generation?.moments.status;
+  const momentsBlocked =
+    momentsStatus === "loading" || momentsStatus === "failed";
+
+  const useLocalDraft = () => {
+    const updated = saveProject(
+      updateGenerationStage(project, "moments", "fallback"),
+    );
+    setProject(updated);
+  };
 
   const updateMoment = (
     id: string,
@@ -107,6 +178,18 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
       stage={3}
       title="Design moments that earn their place."
     >
+      {momentsStatus ? (
+        <ModelStatus
+          error={project.generation?.moments.error}
+          label="Designing a small set of consequential moments…"
+          onFallback={useLocalDraft}
+          onRetry={() => void generateMoments(project)}
+          status={momentsStatus}
+        />
+      ) : null}
+
+      {!momentsBlocked ? (
+        <>
       <div className="moments-intro">
         <p>
           These are design proposals, not a sequence to follow mechanically.
@@ -171,6 +254,8 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           Build the plan <span aria-hidden="true">→</span>
         </button>
       </div>
+        </>
+      ) : null}
     </AppShell>
   );
 }

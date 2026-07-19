@@ -78,3 +78,62 @@ None in Stage 1. All visible outputs are deterministic fixture or local mock dat
 - The three scenarios demonstrate range across practical, relational and written work.
 - Product boundaries are visible in the interface.
 - Stage 1 establishes a screenshot-ready happy path and an actual Visible Thinking Plan.
+
+## Stage 2 — GPT-5.6 core
+
+### Gate
+
+Authorised by Graeme on 19 July 2026. Implementation is complete. Gate 2
+remains open until all three scenarios have been exercised against GPT-5.6
+with a configured server-side API key.
+
+### What changed
+
+- Added the official OpenAI JavaScript SDK and Responses API integration.
+- Added versioned system, clarify, diagnose and moments prompts.
+- Added strict Zod request and structured-output schemas.
+- Added server-side clarify, diagnose and moments endpoints.
+- Added loading, retry, typed error and local-draft recovery states.
+- Preserved browser-local project state before, during and after API failure.
+- Added prompt-contract and schema-contract tests across all three scenarios.
+
+### Why
+
+The model is used for bounded learning-design reasoning, while the tutor-edited
+structured project remains authoritative. The final plan is still rendered
+deterministically; there is no final prose-generation call.
+
+### GPT-5.6 use
+
+GPT-5.6 is configured to:
+
+- ask zero to three material clarification questions;
+- diagnose consequential invisible thinking without claiming proof;
+- propose three to five selective visible-thinking moments; and
+- respect workload, learner-AI position, data minimisation and professional
+  judgement boundaries.
+
+Task material is explicitly delimited as untrusted data. Requests use
+`store: false`, and the application does not log full task bodies.
+
+### Tested
+
+- Production build and TypeScript compilation.
+- Prompt and structured-output contracts for all three canonical scenarios.
+- Boundary assertions for question and moment counts, selective Conditions,
+  feedback loops, workload fit and differentiated scenario outputs.
+- Runtime rejection of malformed requests.
+- Runtime missing-key failure response and state-preserving fallback contract.
+
+### Current uncertainty
+
+No `OPENAI_API_KEY` is available in the local or hosted environment. Therefore
+live GPT-5.6 outputs have not yet been claimed as verified, and Gate 2 remains
+open.
+
+### Devpost evidence
+
+- The implementation now demonstrates non-trivial, three-stage GPT-5.6 use
+  behind a structured professional interaction.
+- Prompt versioning, runtime validation, failure recovery and deterministic
+  rendering are concrete technical decisions suitable for the submission.
