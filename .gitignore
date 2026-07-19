@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+.wrangler/
+.pnpm-store/
+.vinext/
+tsconfig.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
