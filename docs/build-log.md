@@ -83,9 +83,9 @@ None in Stage 1. All visible outputs are deterministic fixture or local mock dat
 
 ### Gate
 
-Authorised by Graeme on 19 July 2026. Implementation is complete. Gate 2
-remains open until all three scenarios have been exercised against GPT-5.6
-with a configured server-side API key.
+Authorised by Graeme on 19 July 2026. Gate 2 passed on 19 July 2026 after all
+three scenarios produced schema-valid, meaningfully different GPT-5.6 results
+that satisfied the boundary assertions.
 
 ### What changed
 
@@ -124,12 +124,29 @@ Task material is explicitly delimited as untrusted data. Requests use
   feedback loops, workload fit and differentiated scenario outputs.
 - Runtime rejection of malformed requests.
 - Runtime missing-key failure response and state-preserving fallback contract.
+- Live GPT-5.6 clarify, diagnose and moments calls for all three scenarios.
+- Flat white: two clarification questions and three moments.
+- Dissatisfied client: three clarification questions and four moments.
+- Short report: three clarification questions and three moments.
+- Distinct selective Condition patterns across all three outputs.
+- Hosted secret stored as a masked runtime value and never committed.
 
-### Current uncertainty
+### Failed or rejected approaches
 
-No `OPENAI_API_KEY` is available in the local or hosted environment. Therefore
-live GPT-5.6 outputs have not yet been claimed as verified, and Gate 2 remains
-open.
+- The first live run surfaced `absent` as the moment-level AI position when the
+  tutor had not asked the plan to consider learner AI. The prompt was tightened
+  and a deterministic server boundary now enforces `not-relevant`, preventing
+  “not considered” from becoming an inferred prohibition.
+- An early evaluator regex incorrectly treated explicit cautions such as “do
+  not use AI detection” as violations. It was replaced with a semantic
+  assertion requiring safeguard or professional-judgement language while
+  rejecting only affirmative automatic-proof claims.
+
+### Gate 2 evidence
+
+The machine-readable result is stored in
+`docs/evidence/gate2-live-results.json`. It records counts, Condition patterns
+and boundary outcomes without storing generated task content or secrets.
 
 ### Devpost evidence
 

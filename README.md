@@ -6,8 +6,9 @@ It helps an educator redesign one real task so consequential learner thinking be
 
 ## Current build status
 
-Stage 1 is complete. The Stage 2 GPT-5.6 core is implemented; live-model Gate
-2 verification still requires a server-side `OPENAI_API_KEY`.
+Stage 1 and the Stage 2 GPT-5.6 core are complete. Gate 2 passed on 19 July
+2026 against all three live canonical scenarios using prompt version
+`vtd-2026-07-19.2`.
 
 Included:
 
@@ -82,6 +83,13 @@ pnpm lint
 pnpm build
 ```
 
+With the development server running and an API key configured, repeat the live
+Gate 2 contract:
+
+```bash
+pnpm test:live
+```
+
 ## Current architecture
 
 - Next.js App Router with TypeScript and React
@@ -121,6 +129,7 @@ The prototype:
 
 - [Source pack and authority hierarchy](docs/README.md)
 - [Stage 1 build evidence](docs/build-log.md)
+- [Gate 2 live results](docs/evidence/gate2-live-results.json)
 
 ## Judge testing path
 

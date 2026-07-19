@@ -1,0 +1,38 @@
+{
+  "gate": "Gate 2",
+  "date": "2026-07-19",
+  "passed": true,
+  "model": "gpt-5.6",
+  "promptVersion": "vtd-2026-07-19.2",
+  "scenarios": [
+    {
+      "source": "flat-white",
+      "clarificationQuestions": 2,
+      "moments": 3,
+      "conditionPattern": "attempt+question|check+explain-judgement|apply+check"
+    },
+    {
+      "source": "dissatisfied-client",
+      "clarificationQuestions": 3,
+      "moments": 4,
+      "conditionPattern": "attempt+question|attempt+check|explain-judgement+check|apply+attempt"
+    },
+    {
+      "source": "short-report",
+      "clarificationQuestions": 3,
+      "moments": 3,
+      "conditionPattern": "attempt+check|question+explain-judgement|apply+explain-judgement"
+    }
+  ],
+  "assertions": {
+    "allOutputsSchemaValid": true,
+    "questionCountWithinZeroToThree": true,
+    "momentCountWithinThreeToFive": true,
+    "conditionsPerMomentWithinOneToThree": true,
+    "feedbackAndWorkloadPresent": true,
+    "learnerAiBoundaryHeld": true,
+    "professionalJudgementBoundaryHeld": true,
+    "scenarioOutputsMeaningfullyDifferent": true,
+    "statePreservingFailureContractTested": true
+  }
+}

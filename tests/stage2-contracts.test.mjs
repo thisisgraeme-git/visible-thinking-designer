@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { projectFromFixture, scenarioFixtures } from "../lib/fixtures.ts";
 import { createGenerationState, updateGenerationStage } from "../lib/model-state.ts";
+import { enforceMomentsBoundaries } from "../lib/server/boundaries.ts";
 import {
   clarifyOutputSchema,
   clarifyRequestSchema,
@@ -121,4 +122,24 @@ test("a model failure preserves the tutor task and existing design state", () =>
   assert.deepEqual(failed.moments, project.moments);
   assert.equal(failed.generation.clarify.status, "failed");
   assert.equal(failed.generation.clarify.error.retryable, true);
+});
+
+test("AI-not-considered is enforced as not-relevant, never inferred as absent", () => {
+  const fixture = scenarioFixtures.find(
+    ({ source }) => source === "flat-white",
+  );
+  const output = {
+    ...fixture.project.plan,
+    evidenceShift: fixture.project.plan.evidenceShift,
+    feedbackPattern: fixture.project.plan.feedbackPattern,
+    useTomorrowSummary: fixture.project.plan.useTomorrowSummary,
+    moments: fixture.project.moments.map((moment) => ({
+      ...moment,
+      aiPosition: "absent",
+    })),
+  };
+  const bounded = enforceMomentsBoundaries(fixture.project.task, output);
+  assert.ok(
+    bounded.moments.every(({ aiPosition }) => aiPosition === "not-relevant"),
+  );
 });
