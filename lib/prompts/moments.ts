@@ -5,6 +5,10 @@ activity where possible; do not create extra learner artefacts merely to fill
 the structure. Explain briefly why the moments work together across the task
 journey.
 
+When a processed sourceDigest is present, use its relevant constraints and
+criteria as supporting context. The tutor's core task description and confirmed
+design focus remain authoritative.
+
 Use plain, direct language while preserving the conceptual and disciplinary
 depth appropriate to the task. Keep every generated field to one short sentence
 unless a little more explanation is needed for implementation.

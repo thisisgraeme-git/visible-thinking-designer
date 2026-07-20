@@ -7,6 +7,12 @@ export const PLAN_GENERATION_MESSAGES = [
   "Preparing the working plan…",
 ] as const;
 
+export const ATTACHMENT_CLARIFICATION_MESSAGES = [
+  "Reading the attached task material…",
+  "Identifying the target task and constraints…",
+  "Preparing the design conversation…",
+] as const;
+
 export function getGenerationMessage(
   status: GenerationStatus,
   index: number,

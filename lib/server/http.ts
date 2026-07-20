@@ -1,17 +1,27 @@
 import { NextResponse } from "next/server";
-import type { ModelFailure } from "../types";
+import type { GenerationError, ModelFailure } from "../types";
 
-export function invalidRequestResponse() {
+export function invalidRequestResponse(message?: string) {
   const body: ModelFailure = {
     ok: false,
     error: {
       code: "invalid_request",
       message:
+        message ??
         "The task data was incomplete or exceeded the allowed length. Your saved project has not been changed.",
       retryable: false,
     },
   };
   return NextResponse.json(body, { status: 400 });
+}
+
+export function requestFailureResponse(
+  error: GenerationError,
+  status: number,
+) {
+  return NextResponse.json({ ok: false, error } satisfies ModelFailure, {
+    status,
+  });
 }
 
 export function modelResponse<T>(
@@ -25,6 +35,14 @@ export function modelResponse<T>(
         ? 429
         : result.error.code === "invalid_request"
           ? 400
+          : result.error.code === "file_too_large"
+            ? 413
+            : [
+                  "unsupported_file",
+                  "empty_file",
+                  "corrupt_file",
+                ].includes(result.error.code)
+              ? 422
           : 502;
   return NextResponse.json(result, { status });
 }

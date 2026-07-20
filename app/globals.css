@@ -482,6 +482,24 @@ h4 {
   text-transform: uppercase;
 }
 
+.recent-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+.recent-card-actions a {
+  color: var(--teal);
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.recent-card-actions a:last-child {
+  color: var(--muted);
+}
+
 .outcome-section {
   border-bottom: 1px solid var(--line);
   border-top: 1px solid var(--line);
@@ -871,6 +889,152 @@ select:hover {
 textarea[aria-invalid="true"] {
   border-color: var(--danger);
   box-shadow: 0 0 0 2px rgba(159, 63, 53, 0.12);
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(159, 63, 53, 0.12);
+}
+
+.field-label {
+  color: var(--ink);
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 780;
+  margin-bottom: 7px;
+}
+
+.attachment-field > div:first-child small,
+.attachment-summary small {
+  color: var(--muted);
+  display: block;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.file-drop {
+  align-items: center;
+  background: var(--teal-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  min-height: 94px;
+  padding: 16px 18px;
+}
+
+.file-drop input {
+  background: transparent;
+  border: 0;
+  max-width: 270px;
+  padding: 8px 0;
+}
+
+.file-drop p,
+.privacy-warning {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.file-drop p strong {
+  color: var(--teal);
+}
+
+.attachment-summary {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 14px 16px;
+}
+
+.attachment-summary > div:first-child {
+  min-width: 0;
+}
+
+.attachment-summary strong,
+.attachment-summary span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.attachment-summary span {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  margin-top: 3px;
+}
+
+.attachment-summary > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.privacy-warning {
+  border-left: 3px solid var(--amber);
+  margin-top: 12px;
+  padding-left: 12px;
+}
+
+.attachment-retention-note,
+.attachment-recovery-note {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.attachment-retention-note {
+  margin: -12px 0 22px;
+}
+
+.change-confirmation,
+.stale-design-note {
+  align-items: center;
+  background: var(--amber-soft);
+  border: 1px solid rgba(200, 122, 42, 0.34);
+  border-radius: var(--radius-card);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding: 22px 24px;
+}
+
+.change-confirmation {
+  align-items: flex-start;
+  display: block;
+}
+
+.change-confirmation p,
+.stale-design-note p {
+  color: var(--text);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.change-confirmation p + p {
+  margin-top: 6px;
+}
+
+.change-confirmation strong,
+.stale-design-note strong {
+  color: var(--ink);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.change-confirmation > div {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.understanding-editor {
+  display: block;
+  margin-top: 12px;
 }
 
 .choice-field {
@@ -2209,6 +2373,18 @@ label > em,
 
   .plan-toolbar {
     gap: 10px;
+  }
+
+  .file-drop,
+  .attachment-summary,
+  .stale-design-note {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .change-confirmation > div,
+  .attachment-summary > div:last-child {
+    flex-direction: column;
   }
 
   .action-row {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { scenarioFixtures } from "@/lib/fixtures";
 import { listProjects } from "@/lib/storage";
+import { isLegacyUntitledTitle } from "@/lib/task-editing";
 import type { VisibleThinkingProject } from "@/lib/types";
 
 const conditionNotes = [
@@ -95,16 +96,23 @@ export function LandingPage() {
           </div>
           <div className="recent-grid">
             {recent.map((project) => (
-              <Link
-                className="recent-card"
-                href={`/design/${project.id}/plan`}
-                key={project.id}
-              >
+              <article className="recent-card" key={project.id}>
                 <span>{project.status}</span>
                 <h3>{project.task.title || "Untitled task"}</h3>
+                {!project.task.title.trim() ||
+                isLegacyUntitledTitle(project.task.title) ? (
+                  <p className="legacy-name-note">Needs a task name</p>
+                ) : null}
                 <p>{project.task.intendedCapability}</p>
-                <strong>Open plan →</strong>
-              </Link>
+                <div className="recent-card-actions">
+                  <Link href={`/design/${project.id}/plan`}>Open plan →</Link>
+                  <Link
+                    href={`/design/new?projectId=${project.id}&return=home`}
+                  >
+                    Edit task details
+                  </Link>
+                </div>
+              </article>
             ))}
           </div>
         </section>

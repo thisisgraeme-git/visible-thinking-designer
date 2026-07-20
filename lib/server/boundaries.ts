@@ -11,21 +11,56 @@ const TARGET_TASK_QUESTION =
 export function enforceClarificationBoundaries<T extends ClarifyOutput>(
   task: VisibleThinkingProject["task"],
   output: T,
+  hasAttachment = false,
 ): T {
-  if (!needsTargetTaskClarification(task.description)) return output;
+  const sourceFit = output.sourceDigest?.sourceFit;
+  const needsTargetTask =
+    needsTargetTaskClarification(task.description) ||
+    sourceFit === "multiple-tasks" ||
+    sourceFit === "template-or-reference";
+  const needsConflictQuestion = sourceFit === "conflicts";
+  const needsReadableSourceQuestion = sourceFit === "unreadable";
+  if (
+    !needsTargetTask &&
+    !needsConflictQuestion &&
+    !needsReadableSourceQuestion
+  ) {
+    return {
+      ...output,
+      sourceDigest: hasAttachment ? output.sourceDigest : null,
+    };
+  }
 
-  const existing = output.questions.filter(
-    ({ question }) => question.trim() !== TARGET_TASK_QUESTION,
-  );
-  return {
-    ...output,
-    questions: [
-      {
+  const required = needsTargetTask
+    ? {
         id: "target-learner-task",
         question: TARGET_TASK_QUESTION,
         whyItMatters:
           "A single learner task gives the design a clear capability, evidence journey and proportionate scope.",
-      },
+      }
+    : needsConflictQuestion
+      ? {
+          id: "source-task-conflict",
+          question:
+            "The attachment and your description appear to point to different tasks. Which task should guide this design?",
+          whyItMatters:
+            "Your short task description remains authoritative, so the target task must be confirmed before the design changes.",
+        }
+      : {
+          id: "unreadable-source",
+          question:
+            "The attached material could not be read clearly. Can you describe the key instructions or replace it with a clearer copy?",
+          whyItMatters:
+            "The design can use only source material that is clear enough to interpret without guessing.",
+        };
+  const existing = output.questions.filter(
+    ({ question }) => question.trim() !== required.question,
+  );
+  return {
+    ...output,
+    sourceDigest: hasAttachment ? output.sourceDigest : null,
+    questions: [
+      required,
       ...existing,
     ].slice(0, 3),
   } as T;

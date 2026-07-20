@@ -73,6 +73,7 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
       );
       const succeeded = saveProject({
         ...stageUpdated,
+        designState: undefined,
         moments: result.data.moments,
         plan: {
           evidenceShift: result.data.evidenceShift,

@@ -11,8 +11,10 @@ import {
   assessPlanIntegrity,
   combineIntegrityWarnings,
 } from "@/lib/plan-integrity";
+import { createGenerationState } from "@/lib/model-state";
 import { duplicateProject, loadProject, saveProject } from "@/lib/storage";
 import { getTaskSummary } from "@/lib/task-summary";
+import { isLegacyUntitledTitle } from "@/lib/task-editing";
 import type {
   IntegrityWarning,
   VisibleThinkingProject,
@@ -63,6 +65,20 @@ export function PlanScreen({ projectId }: { projectId: string }) {
     window.location.href = `/design/${copy.id}/plan`;
   };
 
+  const regenerateDesign = () => {
+    const ready = saveProject({
+      ...project,
+      status: "clarifying",
+      clarification: {
+        sourceDigest: project.clarification.sourceDigest,
+        questions: [],
+        completed: false,
+      },
+      generation: createGenerationState(),
+    });
+    window.location.href = `/design/${ready.id}/diagnose`;
+  };
+
   return (
     <AppShell
       eyebrow="Tutor-editable output"
@@ -76,6 +92,12 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           Saved locally on this device
         </p>
         <div>
+          <Link
+            className="toolbar-button"
+            href={`/design/new?projectId=${project.id}`}
+          >
+            Edit task details
+          </Link>
           <button className="toolbar-button" onClick={duplicate} type="button">
             Duplicate
           </button>
@@ -88,6 +110,54 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           </button>
         </div>
       </div>
+
+      {project.sourceAttachment?.processed ? (
+        <p className="attachment-retention-note no-print">
+          Processed task context from {project.sourceAttachment.filename} is
+          available. The attachment itself was not retained.
+        </p>
+      ) : null}
+
+      {(!project.task.title.trim() ||
+        isLegacyUntitledTitle(project.task.title)) ? (
+        <section className="stale-design-note no-print" role="status">
+          <div>
+            <strong>This existing draft needs a task name.</strong>
+            <p>Name it before using or printing the plan.</p>
+          </div>
+          <Link
+            className="button primary"
+            href={`/design/new?projectId=${project.id}`}
+          >
+            Name this task
+          </Link>
+        </section>
+      ) : null}
+
+      {project.designState?.stale ? (
+        <section className="stale-design-note" role="status">
+          <div>
+            <strong>The task details have changed.</strong>
+            <p>
+              These changes may affect the current design. Regenerate the design
+              focus and moments to apply them.
+            </p>
+          </div>
+          <Link
+            className="button secondary"
+            href={`/design/new?projectId=${project.id}`}
+          >
+            Review task details
+          </Link>
+          <button
+            className="button primary"
+            onClick={regenerateDesign}
+            type="button"
+          >
+            Regenerate design
+          </button>
+        </section>
+      ) : null}
 
       <article className="plan-document">
         <header className="plan-cover">

@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "./app-shell";
 import { ModelStatus } from "./model-status";
+import { ATTACHMENT_CLARIFICATION_MESSAGES } from "@/lib/generation-copy";
+import {
+  getSessionAttachment,
+  removeSessionAttachment,
+} from "@/lib/client-attachments";
 import { requestClarification, requestDiagnosis } from "@/lib/model-client";
 import { updateGenerationStage } from "@/lib/model-state";
 import { loadProject, saveProject } from "@/lib/storage";
@@ -61,6 +66,23 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
 
   const generateClarification = useCallback(
     async (baseProject: VisibleThinkingProject) => {
+      if (
+        baseProject.sourceAttachment &&
+        !baseProject.sourceAttachment.processed &&
+        !getSessionAttachment(baseProject.id)
+      ) {
+        const failed = saveProject(
+          updateGenerationStage(baseProject, "clarify", "failed", {
+            code: "invalid_request",
+            message:
+              "The original attachment was not retained. Return to task details and attach it again; all entered text is still saved.",
+            retryable: false,
+          }),
+        );
+        setProject(failed);
+        setPhase("clarify");
+        return;
+      }
       const loading = saveProject(
         updateGenerationStage(baseProject, "clarify", "loading"),
       );
@@ -92,6 +114,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
         clarification: {
           ...stageUpdated.clarification,
           taskSummary: result.data.taskSummary,
+          sourceDigest: result.data.sourceDigest ?? undefined,
           questions: result.data.questions.map((question) => ({
             ...question,
             skipped: false,
@@ -103,7 +126,11 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           model: result.meta.model,
           promptVersion: result.meta.promptVersion,
         },
+        sourceAttachment: stageUpdated.sourceAttachment
+          ? { ...stageUpdated.sourceAttachment, processed: true }
+          : undefined,
       });
+      removeSessionAttachment(succeeded.id);
       setProject(succeeded);
       setQuestionIndex(0);
       if (completed) await generateDiagnosis(succeeded);
@@ -229,10 +256,37 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
         <ModelStatus
           error={project.generation?.clarify.error}
           label="Reading the task and identifying only what is missing…"
-          onFallback={() => continueWithLocalDraft("clarify")}
+          messages={
+            getSessionAttachment(project.id)
+              ? ATTACHMENT_CLARIFICATION_MESSAGES
+              : undefined
+          }
+          onFallback={
+            getSessionAttachment(project.id)
+              ? undefined
+              : () => continueWithLocalDraft("clarify")
+          }
           onRetry={() => void generateClarification(project)}
           status={clarifyStatus}
         />
+      ) : null}
+
+      {phase === "clarify" &&
+      clarifyStatus === "failed" &&
+      project.sourceAttachment ? (
+        <div className="action-row">
+          <p className="attachment-recovery-note">
+            {getSessionAttachment(project.id)
+              ? `${project.sourceAttachment.filename} remains selected for an in-session retry.`
+              : "The original attachment was not retained, but your entered task details are still saved."}
+          </p>
+          <a
+            className="button secondary"
+            href={`/design/new?projectId=${project.id}`}
+          >
+            Review or replace attachment
+          </a>
+        </div>
       ) : null}
 
       {phase === "diagnose" && diagnoseStatus ? (
@@ -256,6 +310,16 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
             project.clarification.taskSummary ??
             project.clarification.taskReflection
           }
+          onSummaryChange={(value) => {
+            const updated = saveProject({
+              ...project,
+              clarification: {
+                ...project.clarification,
+                taskSummary: value,
+              },
+            });
+            setProject(updated);
+          }}
           total={questions.length}
         />
       ) : phase === "diagnose" &&
@@ -347,8 +411,11 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
 
       {phase === "diagnose" && !diagnoseBlocked ? (
         <div className="action-row">
-          <a className="button secondary" href="/design/new">
-            Edit task
+          <a
+            className="button secondary"
+            href={`/design/new?projectId=${project.id}`}
+          >
+            Edit task details
           </a>
           <button
             className="button primary"
@@ -371,6 +438,7 @@ function ClarifyPhase({
   answer,
   onAnswer,
   onCommit,
+  onSummaryChange,
 }: {
   summary?: string;
   currentQuestion?: ClarificationQuestion;
@@ -379,12 +447,18 @@ function ClarifyPhase({
   answer: string;
   onAnswer: (value: string) => void;
   onCommit: (skipped: boolean) => Promise<void>;
+  onSummaryChange: (value: string) => void;
 }) {
   if (!currentQuestion) {
     return (
       <section className="reflection-card">
         <p className="eyebrow">No clarification needed</p>
-        <p>{summary || "Your task has enough detail to set a design focus."}</p>
+        <UnderstandingEditor
+          onChange={onSummaryChange}
+          summary={
+            summary || "Your task has enough detail to set a design focus."
+          }
+        />
       </section>
     );
   }
@@ -392,7 +466,12 @@ function ClarifyPhase({
     <div className="clarify-layout">
       <section className="reflection-card">
         <p className="eyebrow">Our current understanding</p>
-        <p>{summary || "Your task has enough detail to begin the design."}</p>
+        <UnderstandingEditor
+          onChange={onSummaryChange}
+          summary={
+            summary || "Your task has enough detail to begin the design."
+          }
+        />
       </section>
       <section className="question-card">
         <div className="question-progress">
@@ -437,6 +516,31 @@ function ClarifyPhase({
         </div>
       </section>
     </div>
+  );
+}
+
+function UnderstandingEditor({
+  summary,
+  onChange,
+}: {
+  summary: string;
+  onChange: (value: string) => void;
+}) {
+  const [value, setValue] = useState(summary);
+  return (
+    <label className="understanding-editor">
+      <span>Confirm or correct the target task</span>
+      <textarea
+        onBlur={() => onChange(value.trim())}
+        onChange={(event) => setValue(event.target.value)}
+        rows={4}
+        value={value}
+      />
+      <small>
+        Your description remains primary. Correct this before continuing if the
+        source material points elsewhere.
+      </small>
+    </label>
   );
 }
 

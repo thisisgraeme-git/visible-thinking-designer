@@ -54,6 +54,11 @@ function normaliseProject(
   );
   return {
     ...project,
+    clarification: {
+      ...(project.clarification ?? {}),
+      questions: project.clarification?.questions ?? [],
+      completed: project.clarification?.completed ?? false,
+    },
     moments,
     plan: {
       ...project.plan,

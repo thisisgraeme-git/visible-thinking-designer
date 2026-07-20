@@ -2,6 +2,10 @@ export const DIAGNOSE_PROMPT = `
 Diagnose what the current task already reveals and what consequential thinking
 remains invisible. Protect existing strengths.
 
+When a processed sourceDigest is present, use it as supporting context without
+letting it override the tutor's core task description. Give priority to the
+tutor-confirmed target task and clarification responses.
+
 Use plain, direct language while preserving the conceptual and disciplinary
 depth appropriate to the setting and qualification level. Do not simplify
 degree-level thinking; express it without inflated academic phrasing. Be

@@ -1,15 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "./app-shell";
 import { blankProject, projectFromFixture } from "@/lib/fixtures";
+import {
+  getSessionAttachment,
+  removeSessionAttachment,
+  setSessionAttachment,
+} from "@/lib/client-attachments";
+import {
+  attachmentMetadata,
+  FILE_ACCEPT,
+  FILE_UPLOAD_MAX_LABEL,
+  formatFileSize,
+  validateFileMetadata,
+} from "@/lib/file-intake";
 import { createGenerationState } from "@/lib/model-state";
-import { saveProject } from "@/lib/storage";
+import { loadProject, saveProject } from "@/lib/storage";
 import {
   getTaskDescriptionLimitMessage,
   TASK_DESCRIPTION_MAX,
 } from "@/lib/task-input";
+import {
+  getSubstantiveTaskChanges,
+  isLegacyUntitledTitle,
+} from "@/lib/task-editing";
 import type {
   AiPosition,
   AssessmentStakes,
@@ -264,13 +280,37 @@ function makeGenericDesign(project: VisibleThinkingProject) {
 }
 
 export function TaskScreen() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const source = (searchParams.get("source") || "blank") as ProjectSource;
+  const projectId = searchParams.get("projectId");
+  const returnTo = searchParams.get("return") === "home" ? "/" : "plan";
   const initial = useMemo(
     () => (source === "blank" ? blankProject() : projectFromFixture(source)),
     [source],
   );
   const [project, setProject] = useState(initial);
+  const [original, setOriginal] = useState<VisibleThinkingProject>();
+  const [submitted, setSubmitted] = useState(false);
+  const [fileError, setFileError] = useState("");
+  const [showChangeConfirmation, setShowChangeConfirmation] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!projectId) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const stored = loadProject(projectId);
+      if (stored) {
+        setProject(stored);
+        setOriginal(structuredClone(stored));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [projectId]);
 
   const updateTask = <K extends keyof VisibleThinkingProject["task"]>(
     key: K,
@@ -301,7 +341,17 @@ export function TaskScreen() {
     );
   };
 
+  const titleMissing = !project.task.title.trim();
+  const legacyUntitled = isLegacyUntitledTitle(project.task.title);
+  const showTitleError = legacyUntitled || (submitted && titleMissing);
+  const descriptionMissing = !project.task.description.trim();
+  const descriptionTooShort =
+    !descriptionMissing && project.task.description.trim().length < 30;
+  const capabilityTooShort =
+    project.task.intendedCapability.trim().length < 15;
   const canContinue =
+    !titleMissing &&
+    !legacyUntitled &&
     project.task.description.trim().length >= 30 &&
     project.task.description.length <= TASK_DESCRIPTION_MAX &&
     project.task.intendedCapability.trim().length >= 15;
@@ -309,13 +359,102 @@ export function TaskScreen() {
     project.task.description,
   );
 
-  const continueToDiagnosis = () => {
+  const attachmentChanged =
+    JSON.stringify(original?.sourceAttachment) !==
+    JSON.stringify(project.sourceAttachment);
+  const substantiveChanges = original
+    ? [
+        ...getSubstantiveTaskChanges(original.task, project.task),
+        ...(attachmentChanged ? ["supporting source material"] : []),
+      ]
+    : [];
+  const hasDownstreamDesign = Boolean(
+    original?.diagnosis || (original?.moments.length ?? 0) > 0,
+  );
+
+  const routeAfterTitleOnlySave = (ready: VisibleThinkingProject) => {
+    router.push(
+      returnTo === "/" ? "/" : `/design/${ready.id}/${returnTo}`,
+    );
+  };
+
+  const saveAndRegenerate = () => {
+    const base = original ? project : makeGenericDesign(project);
     const ready = saveProject({
-      ...makeGenericDesign(project),
+      ...base,
       status: "clarifying",
+      designState:
+        original && substantiveChanges.length > 0
+          ? { stale: true, changedFields: substantiveChanges }
+          : undefined,
+      clarification: {
+        sourceDigest: attachmentChanged
+          ? undefined
+          : project.clarification.sourceDigest,
+        questions: [],
+        completed: false,
+      },
       generation: createGenerationState(),
     });
-    window.location.href = `/design/${ready.id}/diagnose`;
+    router.push(`/design/${ready.id}/diagnose`);
+  };
+
+  const saveWithoutRegenerating = () => {
+    const ready = saveProject({
+      ...project,
+      designState: {
+        stale: true,
+        changedFields: substantiveChanges,
+      },
+    });
+    routeAfterTitleOnlySave(ready);
+  };
+
+  const continueToDiagnosis = () => {
+    setSubmitted(true);
+    if (!canContinue) return;
+    if (original && substantiveChanges.length === 0) {
+      routeAfterTitleOnlySave(saveProject(project));
+      return;
+    }
+    if (original && hasDownstreamDesign) {
+      setShowChangeConfirmation(true);
+      return;
+    }
+    saveAndRegenerate();
+  };
+
+  const selectFile = (file?: File) => {
+    if (!file) return;
+    const validation = validateFileMetadata(file);
+    if (validation) {
+      setFileError(validation.message);
+      return;
+    }
+    setFileError("");
+    setSessionAttachment(project.id, file);
+    setProject((current) => ({
+      ...current,
+      sourceAttachment: attachmentMetadata(file),
+      clarification: {
+        ...current.clarification,
+        sourceDigest: undefined,
+      },
+    }));
+  };
+
+  const removeFile = () => {
+    removeSessionAttachment(project.id);
+    setFileError("");
+    setProject((current) => ({
+      ...current,
+      sourceAttachment: undefined,
+      clarification: {
+        ...current.clarification,
+        sourceDigest: undefined,
+      },
+    }));
+    if (fileInput.current) fileInput.current.value = "";
   };
 
   return (
@@ -334,11 +473,22 @@ export function TaskScreen() {
           <label>
             <span>Task title</span>
             <input
+              aria-describedby={
+                showTitleError ? "task-title-error" : undefined
+              }
+              aria-invalid={showTitleError ? true : undefined}
               maxLength={120}
               onChange={(event) => updateTask("title", event.target.value)}
               placeholder="e.g. Prepare a flat white during service"
               value={project.task.title}
             />
+            {showTitleError ? (
+              <span className="field-error" id="task-title-error" role="alert">
+                {legacyUntitled
+                  ? "Name this task before continuing. The existing draft has been preserved."
+                  : "Enter a task name before continuing."}
+              </span>
+            ) : null}
           </label>
           <label>
             <span>Setting or context</span>
@@ -365,13 +515,25 @@ export function TaskScreen() {
         </div>
 
         <label>
-          <span>Describe the task</span>
-          <small>What will the learner actually do?</small>
+          <span>Describe the core task</span>
+          <small>
+            Describe what learners are being asked to do in one to four
+            sentences. You can also attach the worksheet, assessment
+            instructions, template or a photograph of the task.
+          </small>
           <textarea
             aria-describedby={
-              descriptionLimitMessage ? "task-description-limit" : undefined
+              descriptionLimitMessage ||
+              (submitted && (descriptionMissing || descriptionTooShort))
+                ? "task-description-limit"
+                : undefined
             }
-            aria-invalid={descriptionLimitMessage ? true : undefined}
+            aria-invalid={
+              descriptionLimitMessage ||
+              (submitted && (descriptionMissing || descriptionTooShort))
+                ? true
+                : undefined
+            }
             onChange={(event) => updateTask("description", event.target.value)}
             placeholder="Paste the current instructions or describe the activity."
             rows={6}
@@ -381,16 +543,93 @@ export function TaskScreen() {
             {project.task.description.length.toLocaleString("en-NZ")} /{" "}
             {TASK_DESCRIPTION_MAX.toLocaleString("en-NZ")}
           </em>
-          {descriptionLimitMessage ? (
+          {descriptionLimitMessage ||
+          (submitted && (descriptionMissing || descriptionTooShort)) ? (
             <span
               className="field-error"
               id="task-description-limit"
               role="alert"
             >
-              {descriptionLimitMessage}
+              {descriptionMissing
+                ? "Describe the core learner task before continuing."
+                : descriptionTooShort
+                  ? "Add enough detail to make the learner action clear."
+                  : descriptionLimitMessage}
             </span>
           ) : null}
         </label>
+
+        <div className="field-group attachment-field">
+          <div>
+            <span className="field-label">Supporting source material</span>
+            <small>
+              Optional · one PDF, DOC, DOCX, JPG, JPEG or PNG · up to{" "}
+              {FILE_UPLOAD_MAX_LABEL}
+            </small>
+          </div>
+          <div
+            className="file-drop"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              selectFile(event.dataTransfer.files[0]);
+            }}
+          >
+            <input
+              accept={FILE_ACCEPT}
+              aria-label="Attach supporting source material"
+              onChange={(event) => selectFile(event.target.files?.[0])}
+              ref={fileInput}
+              type="file"
+            />
+            <p>
+              Drop one file here, or <strong>choose a file</strong>
+            </p>
+          </div>
+          {project.sourceAttachment ? (
+            <div className="attachment-summary">
+              <div>
+                <strong>{project.sourceAttachment.filename}</strong>
+                <span>
+                  {project.sourceAttachment.fileType} ·{" "}
+                  {formatFileSize(project.sourceAttachment.size)}
+                </span>
+                {project.sourceAttachment.processed &&
+                !getSessionAttachment(project.id) ? (
+                  <small>
+                    Processed context is available. The attachment itself was
+                    not retained.
+                  </small>
+                ) : null}
+              </div>
+              <div>
+                <button
+                  className="toolbar-button"
+                  onClick={() => fileInput.current?.click()}
+                  type="button"
+                >
+                  Replace
+                </button>
+                <button
+                  className="toolbar-button"
+                  onClick={removeFile}
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {fileError ? (
+            <span className="field-error" role="alert">
+              {fileError}
+            </span>
+          ) : null}
+          <p className="privacy-warning">
+            Do not upload learner names, identifying information or
+            confidential records.
+          </p>
+        </div>
 
         <div className="field-group">
           <label>
@@ -400,6 +639,14 @@ export function TaskScreen() {
               take responsibility for.
             </small>
             <textarea
+              aria-describedby={
+                submitted && capabilityTooShort
+                  ? "task-capability-error"
+                  : undefined
+              }
+              aria-invalid={
+                submitted && capabilityTooShort ? true : undefined
+              }
               maxLength={1200}
               onChange={(event) =>
                 updateTask("intendedCapability", event.target.value)
@@ -408,6 +655,15 @@ export function TaskScreen() {
               rows={3}
               value={project.task.intendedCapability}
             />
+            {submitted && capabilityTooShort ? (
+              <span
+                className="field-error"
+                id="task-capability-error"
+                role="alert"
+              >
+                Describe the intended capability before continuing.
+              </span>
+            ) : null}
           </label>
           <button
             className="sentence-starter"
@@ -666,15 +922,53 @@ export function TaskScreen() {
         </fieldset>
       </div>
 
+      {showChangeConfirmation ? (
+        <section className="change-confirmation" role="alert">
+          <p>
+            <strong>Review before applying these changes.</strong>
+            These changes may affect the current design. Regenerate the design
+            focus and moments to apply them.
+          </p>
+          <p>
+            The existing plan will remain available until you explicitly
+            replace it.
+          </p>
+          <div>
+            <button
+              className="button secondary"
+              onClick={saveWithoutRegenerating}
+              type="button"
+            >
+              Save without regenerating
+            </button>
+            <button
+              className="button primary"
+              onClick={saveAndRegenerate}
+              type="button"
+            >
+              Regenerate design focus and moments
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <div className="action-row">
-        <LinkButton href="/">Back</LinkButton>
+        <LinkButton
+          href={
+            original && returnTo !== "/"
+              ? `/design/${project.id}/${returnTo}`
+              : "/"
+          }
+        >
+          Back
+        </LinkButton>
         <button
           className="button primary"
-          disabled={!canContinue}
           onClick={continueToDiagnosis}
           type="button"
         >
-          Clarify this task <span aria-hidden="true">→</span>
+          {original ? "Save task details" : "Clarify this task"}{" "}
+          <span aria-hidden="true">→</span>
         </button>
       </div>
     </AppShell>

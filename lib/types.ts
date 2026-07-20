@@ -119,6 +119,30 @@ export interface ClarificationQuestion {
   skipped: boolean;
 }
 
+export type SourceFit =
+  | "aligned"
+  | "conflicts"
+  | "multiple-tasks"
+  | "template-or-reference"
+  | "unreadable"
+  | "unclear";
+
+export interface SourceDigest {
+  apparentLearnerTask: string;
+  importantInstructionsAndConstraints: string[];
+  criteriaOrRequiredEvidence: string[];
+  warnings: string[];
+  sourceFit: SourceFit;
+}
+
+export interface SourceAttachment {
+  filename: string;
+  fileType: "PDF" | "DOC" | "DOCX" | "JPG" | "JPEG" | "PNG";
+  mimeType: string;
+  size: number;
+  processed: boolean;
+}
+
 export interface TaskDiagnosis {
   capabilitySummary: string;
   capabilityLensNotes: string[];
@@ -182,6 +206,10 @@ export interface GenerationError {
   code:
     | "configuration_error"
     | "invalid_request"
+    | "unsupported_file"
+    | "file_too_large"
+    | "empty_file"
+    | "corrupt_file"
     | "model_refusal"
     | "schema_error"
     | "rate_limited"
@@ -232,10 +260,16 @@ export interface VisibleThinkingProject {
   };
   clarification: {
     taskSummary?: string;
+    sourceDigest?: SourceDigest;
     /** Legacy Stage 2/2.5A summary retained for browser-local draft compatibility. */
     taskReflection?: string;
     questions: ClarificationQuestion[];
     completed: boolean;
+  };
+  sourceAttachment?: SourceAttachment;
+  designState?: {
+    stale: boolean;
+    changedFields: string[];
   };
   diagnosis?: TaskDiagnosis;
   moments: VisibleThinkingMoment[];
@@ -262,6 +296,7 @@ export interface VisibleThinkingProject {
 
 export interface ClarifyOutput {
   taskSummary: string;
+  sourceDigest?: SourceDigest | null;
   questions: Array<{
     id: string;
     question: string;

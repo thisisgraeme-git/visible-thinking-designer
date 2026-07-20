@@ -57,7 +57,7 @@ export const activityRelationshipSchema = z.enum([
 
 export const taskSchema = z
   .object({
-    title: z.string().max(120),
+    title: z.string().trim().min(1).max(120),
     description: z.string().min(30).max(4000),
     intendedCapability: z.string().min(15).max(1200),
     capabilityDimensions: z
@@ -114,6 +114,25 @@ export const taskSchema = z
   })
   .strict();
 
+export const sourceDigestSchema = z
+  .object({
+    apparentLearnerTask: z.string().min(10).max(500),
+    importantInstructionsAndConstraints: z
+      .array(z.string().min(3).max(300))
+      .max(6),
+    criteriaOrRequiredEvidence: z.array(z.string().min(3).max(300)).max(6),
+    warnings: z.array(z.string().min(3).max(300)).max(4),
+    sourceFit: z.enum([
+      "aligned",
+      "conflicts",
+      "multiple-tasks",
+      "template-or-reference",
+      "unreadable",
+      "unclear",
+    ]),
+  })
+  .strict();
+
 export const clarifyRequestSchema = z
   .object({
     source: z.enum([
@@ -123,12 +142,14 @@ export const clarifyRequestSchema = z
       "short-report",
     ]),
     task: taskSchema,
+    priorSourceDigest: sourceDigestSchema.optional(),
   })
   .strict();
 
 export const clarifyOutputSchema = z
   .object({
     taskSummary: z.string().min(20).max(500),
+    sourceDigest: sourceDigestSchema.nullable().default(null),
     questions: z
       .array(
         z
@@ -159,6 +180,7 @@ export const diagnoseRequestSchema = z
     clarification: z
       .object({
         taskSummary: z.string().max(500).optional(),
+        sourceDigest: sourceDigestSchema.optional(),
         taskReflection: z.string().max(700).optional(),
         questions: z.array(clarificationQuestionSchema).max(3),
         completed: z.boolean(),
@@ -237,6 +259,7 @@ export const momentsRequestSchema = z
   .object({
     task: taskSchema,
     diagnosis: diagnosisSchema,
+    sourceDigest: sourceDigestSchema.optional(),
   })
   .strict();
 

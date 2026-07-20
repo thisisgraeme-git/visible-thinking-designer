@@ -6,6 +6,7 @@ import type {
   MomentsOutput,
   VisibleThinkingProject,
 } from "./types";
+import { getSessionAttachment } from "./client-attachments";
 
 async function postModelStage<T>(
   endpoint: string,
@@ -45,10 +46,16 @@ const unknownFailure = (): ModelFailure => ({
 });
 
 export function requestClarification(project: VisibleThinkingProject) {
-  return postModelStage<ClarifyOutput>("/api/design/clarify", {
+  const body = {
     source: project.source,
     task: project.task,
-  });
+    priorSourceDigest: project.clarification.sourceDigest,
+  };
+  const attachment = getSessionAttachment(project.id);
+  if (!attachment) {
+    return postModelStage<ClarifyOutput>("/api/design/clarify", body);
+  }
+  return postClarificationWithAttachment(body, attachment);
 }
 
 export function requestDiagnosis(project: VisibleThinkingProject) {
@@ -62,5 +69,34 @@ export function requestMoments(project: VisibleThinkingProject) {
   return postModelStage<MomentsOutput>("/api/design/moments", {
     task: project.task,
     diagnosis: project.diagnosis,
+    sourceDigest: project.clarification.sourceDigest,
   });
+}
+
+async function postClarificationWithAttachment(
+  body: unknown,
+  attachment: File,
+): Promise<ModelResult<ClarifyOutput>> {
+  try {
+    const form = new FormData();
+    form.set("payload", JSON.stringify(body));
+    form.set("attachment", attachment);
+    const response = await fetch("/api/design/clarify", {
+      method: "POST",
+      body: form,
+    });
+    const payload = (await response.json()) as ModelResult<ClarifyOutput>;
+    if (!response.ok && payload.ok) return unknownFailure();
+    return payload;
+  } catch {
+    return {
+      ok: false,
+      error: {
+        code: "service_unavailable",
+        message:
+          "The attached material could not be processed. Your task details and selected file are still available for another attempt.",
+        retryable: true,
+      },
+    };
+  }
 }

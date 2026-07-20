@@ -1,0 +1,32 @@
+{
+  "gate": "Stage 2.5B owner review",
+  "passed": true,
+  "promptVersion": "vtd-2026-07-20.6",
+  "cases": [
+    {
+      "input": "assessment PDF plus short tutor description",
+      "status": 200,
+      "sourceDigestReturned": true,
+      "sourceFit": "conflicts",
+      "targetedConflictQuestionReturned": true
+    },
+    {
+      "input": "image-based task plus short tutor description",
+      "status": 200,
+      "sourceDigestReturned": true,
+      "sourceFit": "aligned",
+      "targetedQuestionCount": 0
+    },
+    {
+      "input": "text-only task",
+      "status": 200,
+      "sourceDigestReturned": false,
+      "textOnlyContractPreserved": true
+    }
+  ],
+  "privacyChecks": {
+    "testAttachmentsStoredInRepository": false,
+    "rawSourceIncludedInEvidence": false,
+    "sourceContentWrittenToApplicationLogs": false
+  }
+}

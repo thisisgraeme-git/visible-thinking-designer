@@ -387,3 +387,93 @@ review endpoint or additional model call was added.
 - No capability-assurance, automated-assessment, scoring or learner-record
   claim was introduced.
 - This repair stops at the Stage 2.5C owner-review gate.
+
+## Stage 2.5B — Task File Intake
+
+### Gate
+
+Gate 2.5C was closed by Graeme after owner review on 20 July 2026. Stage 2.5B
+task-file intake was then authorised as the only implementation scope. Stage 3
+persistence/export and unrelated polish remain outside scope.
+
+### What changed
+
+- Renamed the primary intake field to “Describe the core task” and kept the
+  tutor’s one-to-four-sentence description as the authoritative statement of
+  intent.
+- Added one optional drag-and-drop file picker for PDF, DOC, DOCX, JPG, JPEG or
+  PNG files, with filename, type, size, remove/replace controls and an 8 MB
+  limit.
+- Added client and server validation for unsupported, oversized, empty and
+  corrupt or mismatched files. Files are either processed in full or rejected;
+  none are silently truncated or partially processed.
+- Extended the existing clarification request to carry a document as
+  `input_file` or an image as `input_image`. No extraction endpoint, second
+  model call, database or durable file store was added.
+- Added a concise internal `sourceDigest` containing the apparent learner task,
+  important instructions and constraints, relevant criteria or required
+  evidence, ambiguity warnings and source fit.
+- Passed the processed digest to the existing design-focus and moments
+  contracts. The raw file is not resent and the digest is not rendered in the
+  final plan.
+- Added deterministic clarification for multi-task documents, templates,
+  tutor/source conflict and unreadable material. Attachment instructions remain
+  untrusted and cannot override the application prompt or tutor intent.
+- Added required task name and core-task validation. New projects can no longer
+  be stored as “Untitled task”; legacy untitled drafts remain accessible and
+  prompt for a name.
+- Added “Edit task details” from stored-project cards and final plans. Title-only
+  changes update immediately; substantive changes preserve the plan, mark it
+  stale and require explicit confirmation before regeneration.
+- Added attachment-aware progress and recovery copy. A selected file remains
+  available for an in-session retry after processing failure.
+
+### Privacy and retention
+
+- Raw file bytes remain in browser session memory only until clarification
+  succeeds. They are not written to local storage, the repository, the final
+  plan or application logs.
+- After processing, only filename/type/size metadata and the processed
+  `sourceDigest` are retained in the browser-local draft.
+- Reopened drafts clearly state that the original attachment was not retained.
+  The processed digest remains available for renaming or clarification without
+  re-upload. Reprocessing is required only when the attachment is replaced.
+- The intake warns: “Do not upload learner names, identifying information or
+  confidential records.”
+
+### GPT-5.6 use
+
+Prompt version `vtd-2026-07-20.6` retains the existing clarification,
+design-focus and moments endpoints. The clarification call performs the only
+attachment reading and returns both the existing short `taskSummary` and the
+internal source digest. `store: false` remains set on Responses API calls.
+
+### Tested
+
+- Passed 50 static, schema, safeguard, file-validation, privacy, compatibility,
+  editing, rendering and wait-state tests.
+- Passed TypeScript type checking, lint and the production build.
+- Live-validated an assessment PDF plus a short tutor description. The model
+  returned a source digest and correctly surfaced a genuine difference between
+  the tutor description and the attachment for human confirmation.
+- Live-validated an image-based workshop task. The model returned an aligned
+  digest and needed no clarification question.
+- Live-validated a text-only professional task through the unchanged JSON
+  clarification path with no source digest.
+- Confirmed application logs contained only request method, route, response
+  status and duration—not source content.
+- Machine-readable results are in
+  `docs/evidence/stage25b-live-results.json`; they contain no attachment or
+  processed source text.
+
+### Compatibility and boundary confirmation
+
+- The browser-local project schema and storage key remain `0.1`. Stage 2.5A/C
+  drafts remain readable; new attachment and stale-design properties are
+  optional.
+- No raw attachment, learner record, database, account, durable file storage,
+  new authentication or export architecture was introduced.
+- No capability-assurance, automated-assessment, AI-detection, scoring or
+  confidence claim was introduced.
+- This implementation stops at the Stage 2.5B owner-review gate. Stage 3 has
+  not begun.
