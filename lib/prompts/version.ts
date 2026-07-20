@@ -1,1 +1,1 @@
-export const PROMPT_VERSION = "vtd-2026-07-19.2";
+export const PROMPT_VERSION = "vtd-2026-07-20.3";

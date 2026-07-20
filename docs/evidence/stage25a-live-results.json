@@ -1,0 +1,51 @@
+{
+  "gate": "Stage 2.5A review",
+  "date": "2026-07-20",
+  "passed": true,
+  "model": "gpt-5.6",
+  "promptVersion": "vtd-2026-07-20.3",
+  "comparison": {
+    "sameTask": "flat-white",
+    "changedInputs": [
+      "stakes",
+      "estimated readiness",
+      "capability dimensions",
+      "underpinning demands",
+      "safety-critical flag"
+    ],
+    "meaningfullyDifferent": true
+  },
+  "scenarios": [
+    {
+      "source": "blank",
+      "clarificationQuestions": 3,
+      "moments": 4,
+      "conditionPattern": "attempt+check|attempt+check|explain-judgement+question|apply+check"
+    },
+    {
+      "source": "flat-white",
+      "clarificationQuestions": 3,
+      "moments": 4,
+      "conditionPattern": "attempt+check|question+explain-judgement|check+explain-judgement|apply+check"
+    },
+    {
+      "source": "dissatisfied-client",
+      "clarificationQuestions": 3,
+      "moments": 4,
+      "conditionPattern": "attempt+question|explain-judgement+check|check+apply|check+apply"
+    },
+    {
+      "source": "short-report",
+      "clarificationQuestions": 3,
+      "moments": 4,
+      "conditionPattern": "attempt+explain-judgement|check+question|explain-judgement+question|apply+explain-judgement+check"
+    }
+  ],
+  "boundaries": {
+    "aiOffRespected": true,
+    "safetyCriticalEvidenceGroundedInPerformance": true,
+    "noCapabilityAssuranceClaim": true,
+    "noAutomatedAssessmentClaim": true,
+    "noTaskContentOrSecretStored": true
+  }
+}

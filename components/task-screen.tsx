@@ -9,10 +9,35 @@ import { saveProject } from "@/lib/storage";
 import type {
   AiPosition,
   AssessmentStakes,
+  CapabilityDimension,
+  EstimatedReadiness,
   LearningSetting,
   ProjectSource,
+  UnderpinningDemand,
   VisibleThinkingProject,
 } from "@/lib/types";
+
+const capabilityDimensions: Array<{
+  value: CapabilityDimension;
+  label: string;
+}> = [
+  { value: "know", label: "Know" },
+  { value: "do", label: "Do" },
+  { value: "be-relate", label: "Be & Relate" },
+];
+
+const underpinningDemands: Array<{
+  value: UnderpinningDemand;
+  label: string;
+}> = [
+  { value: "technical-domain", label: "Technical / domain" },
+  { value: "language-literacy", label: "Language & literacy" },
+  { value: "numeracy", label: "Numeracy" },
+  { value: "cultural-relational", label: "Cultural & relational" },
+];
+
+const capabilityStarter =
+  "By the end of this task, learners should know…, be able to…, and demonstrate…";
 
 function makeGenericDesign(project: VisibleThinkingProject) {
   if (project.diagnosis && project.moments.length > 0) return project;
@@ -23,6 +48,17 @@ function makeGenericDesign(project: VisibleThinkingProject) {
     ...project,
     diagnosis: {
       capabilitySummary: project.task.intendedCapability,
+      capabilityLensNotes: (project.task.capabilityDimensions ?? []).map(
+        (dimension) =>
+          `${dimension === "be-relate" ? "Be & Relate" : dimension[0].toUpperCase() + dimension.slice(1)} is relevant to the intended capability.`,
+      ),
+      taskDemandNotes: (project.task.underpinningDemands ?? []).map(
+        (demand) =>
+          `${demand.replaceAll("-", " / ")} should be made explicit only where it changes support or evidence.`,
+      ),
+      culturalRelationalConsiderations: project.task.culturalRelationalContext
+        ? [project.task.culturalRelationalContext]
+        : [],
       currentEvidenceReveals: [
         project.task.currentEvidence ||
           "The quality of the finished product or performance",
@@ -41,7 +77,13 @@ function makeGenericDesign(project: VisibleThinkingProject) {
         "The learner should not become more surveilled",
       ],
       readinessAndScaffolding: [
-        "Support should be calibrated to current readiness",
+        project.task.estimatedReadiness === "ready-independently"
+          ? "The tutor estimates learners are ready to attempt independently; use support responsively rather than by default."
+          : project.task.estimatedReadiness === "not-yet-ready"
+            ? "The tutor estimates learners are not yet ready; stage the attempt and preserve a later independent performance."
+            : project.task.estimatedReadiness === "mixed-across-group"
+              ? "Readiness is mixed across the group; make support adjustable without turning the estimate into a learner label."
+              : "Support should be calibrated to the tutor's current readiness estimate.",
       ],
       designOpportunity:
         "Add three brief, high-value moments that reveal planning, checking and adaptation while keeping the original task central.",
@@ -72,6 +114,7 @@ function makeGenericDesign(project: VisibleThinkingProject) {
           "A generic plan disconnected from the actual task.",
         feedbackLoop:
           "The first attempt provides feedback; the learner identifies what should change next.",
+        exampleInContext: `For ${project.task.title || "this task"}, the learner names the first decision they will make and the signal they will check.`,
         aiPosition,
         workloadFit: "Low — a short opening exchange.",
         source: "model" as const,
@@ -92,6 +135,7 @@ function makeGenericDesign(project: VisibleThinkingProject) {
           "A claim of confidence without a relevant check.",
         feedbackLoop:
           "The check or follow-up question changes the learner’s next action.",
+        exampleInContext: `During ${project.task.title || "the task"}, the tutor samples one consequential decision and asks what evidence would reverse it.`,
         aiPosition,
         workloadFit: "Low — sample one decision, not every step.",
         source: "model" as const,
@@ -112,6 +156,7 @@ function makeGenericDesign(project: VisibleThinkingProject) {
           "Repeating the original response despite the changed condition.",
         feedbackLoop:
           "The changed outcome becomes feedback for the learner’s final refinement.",
+        exampleInContext: `Repeat one part of ${project.task.title || "the task"} after changing an authentic constraint, then ask what the learner preserved and changed.`,
         aiPosition,
         workloadFit: "Medium — one changed condition.",
         source: "model" as const,
@@ -157,6 +202,26 @@ export function TaskScreen() {
       task: { ...current.task, [key]: value },
     }));
 
+  const toggleCapabilityDimension = (value: CapabilityDimension) => {
+    const selected = project.task.capabilityDimensions ?? [];
+    updateTask(
+      "capabilityDimensions",
+      selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value],
+    );
+  };
+
+  const toggleUnderpinningDemand = (value: UnderpinningDemand) => {
+    const selected = project.task.underpinningDemands ?? [];
+    updateTask(
+      "underpinningDemands",
+      selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value],
+    );
+  };
+
   const canContinue =
     project.task.description.trim().length >= 30 &&
     project.task.intendedCapability.trim().length >= 15;
@@ -193,7 +258,7 @@ export function TaskScreen() {
             />
           </label>
           <label>
-            <span>Learning setting</span>
+            <span>Setting or context</span>
             <select
               onChange={(event) =>
                 updateTask(
@@ -229,26 +294,114 @@ export function TaskScreen() {
           <em>{project.task.description.length} / 4000</em>
         </label>
 
-        <label>
-          <span>What capability is this intended to develop?</span>
-          <small>
-            Name what the learner should understand, judge, perform, adapt or
-            take responsibility for.
-          </small>
-          <textarea
-            maxLength={1200}
-            onChange={(event) =>
-              updateTask("intendedCapability", event.target.value)
-            }
-            placeholder="Describe the consequential capability—not only the output."
-            rows={3}
-            value={project.task.intendedCapability}
-          />
-        </label>
+        <div className="field-group">
+          <label>
+            <span>What capability is this intended to develop?</span>
+            <small>
+              Name what the learner should understand, judge, perform, adapt or
+              take responsibility for.
+            </small>
+            <textarea
+              maxLength={1200}
+              onChange={(event) =>
+                updateTask("intendedCapability", event.target.value)
+              }
+              placeholder="Describe the consequential capability—not only the output."
+              rows={3}
+              value={project.task.intendedCapability}
+            />
+          </label>
+          <button
+            className="sentence-starter"
+            onClick={() => {
+              if (!project.task.intendedCapability.trim()) {
+                updateTask("intendedCapability", capabilityStarter);
+              }
+            }}
+            type="button"
+          >
+            Use the optional sentence starter
+          </button>
+          <small className="sentence-starter-copy">{capabilityStarter}</small>
+        </div>
+
+        <div className="lens-layout">
+          <fieldset className="choice-field lens-field">
+            <legend>Capability dimensions</legend>
+            <small>Choose any that help. These are lenses, not measures.</small>
+            <div className="choice-grid three-up">
+              {capabilityDimensions.map((option) => (
+                <label className="chip-choice" key={option.value}>
+                  <input
+                    checked={(project.task.capabilityDimensions ?? []).includes(
+                      option.value,
+                    )}
+                    onChange={() => toggleCapabilityDimension(option.value)}
+                    type="checkbox"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+            <label className="inline-choice help-choice">
+              <input
+                checked={
+                  project.task.helpIdentifyCapabilityDimensions ?? false
+                }
+                onChange={(event) =>
+                  updateTask(
+                    "helpIdentifyCapabilityDimensions",
+                    event.target.checked,
+                  )
+                }
+                type="checkbox"
+              />
+              <span>Help me identify this</span>
+            </label>
+          </fieldset>
+
+          <fieldset className="choice-field lens-field">
+            <legend>Underpinning demands</legend>
+            <small>Select only demands that matter in this task.</small>
+            <div className="choice-grid">
+              {underpinningDemands.map((option) => (
+                <label className="chip-choice" key={option.value}>
+                  <input
+                    checked={(project.task.underpinningDemands ?? []).includes(
+                      option.value,
+                    )}
+                    onChange={() => toggleUnderpinningDemand(option.value)}
+                    type="checkbox"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+            <label className="inline-choice help-choice">
+              <input
+                checked={project.task.helpIdentifyUnderpinningDemands ?? false}
+                onChange={(event) =>
+                  updateTask(
+                    "helpIdentifyUnderpinningDemands",
+                    event.target.checked,
+                  )
+                }
+                type="checkbox"
+              />
+              <span>Help me identify this</span>
+            </label>
+          </fieldset>
+        </div>
 
         <div className="field-row two-column">
           <label>
             <span>What currently counts as evidence?</span>
+            <small>
+              What is presently treated as evidence that the learner has
+              completed the task or demonstrated the capability? This might be
+              an assessment submission, finished product, observed performance,
+              explanation, record or workplace outcome.
+            </small>
             <textarea
               maxLength={800}
               onChange={(event) =>
@@ -259,27 +412,81 @@ export function TaskScreen() {
               value={project.task.currentEvidence}
             />
           </label>
-          <label>
-            <span>Assessment stakes</span>
-            <select
-              onChange={(event) =>
-                updateTask(
-                  "assessmentStakes",
-                  event.target.value as AssessmentStakes,
-                )
-              }
-              value={project.task.assessmentStakes}
-            >
-              <option value="learning-activity">Learning activity</option>
-              <option value="formative">Formative assessment</option>
-              <option value="summative">Summative assessment</option>
-              <option value="workplace-practical">
-                Workplace / practical observation
-              </option>
-              <option value="other">Other</option>
-            </select>
-          </label>
+          <div className="field-group">
+            <label>
+              <span>Stakes and consequences</span>
+              <select
+                onChange={(event) =>
+                  updateTask(
+                    "assessmentStakes",
+                    event.target.value as AssessmentStakes,
+                  )
+                }
+                value={project.task.assessmentStakes}
+              >
+                <option value="low-stakes-practice">Low-stakes practice</option>
+                <option value="moderate-stakes-checkpoint">
+                  Moderate-stakes checkpoint
+                </option>
+                <option value="high-stakes-final">
+                  High-stakes or final performance
+                </option>
+                <option value="not-sure">Not sure</option>
+              </select>
+            </label>
+            <div className="flag-stack">
+              <label className="inline-choice">
+                <input
+                  checked={project.task.safetyCritical ?? false}
+                  onChange={(event) =>
+                    updateTask("safetyCritical", event.target.checked)
+                  }
+                  type="checkbox"
+                />
+                <span>Safety-critical</span>
+              </label>
+              <label className="inline-choice">
+                <input
+                  checked={
+                    project.task.regulatedOrComplianceSensitive ?? false
+                  }
+                  onChange={(event) =>
+                    updateTask(
+                      "regulatedOrComplianceSensitive",
+                      event.target.checked,
+                    )
+                  }
+                  type="checkbox"
+                />
+                <span>Regulated or compliance-sensitive</span>
+              </label>
+            </div>
+          </div>
         </div>
+
+        <label>
+          <span>Estimated readiness</span>
+          <small>
+            A tutor estimate for instructional design—not a learner diagnosis.
+          </small>
+          <select
+            onChange={(event) =>
+              updateTask(
+                "estimatedReadiness",
+                event.target.value as EstimatedReadiness,
+              )
+            }
+            value={project.task.estimatedReadiness ?? "not-sure"}
+          >
+            <option value="ready-independently">
+              Ready to attempt independently
+            </option>
+            <option value="ready-with-support">Ready with some support</option>
+            <option value="not-yet-ready">Not yet ready</option>
+            <option value="mixed-across-group">Mixed across the group</option>
+            <option value="not-sure">Not sure</option>
+          </select>
+        </label>
 
         <label>
           <span>Learner and context notes</span>
@@ -294,6 +501,23 @@ export function TaskScreen() {
             }
             rows={3}
             value={project.task.learnerContextNotes}
+          />
+        </label>
+
+        <label>
+          <span>Cultural and relational intelligence</span>
+          <small>
+            Whose knowledge, language, values, responsibilities and ways of
+            relating matter in this context?
+          </small>
+          <textarea
+            maxLength={1200}
+            onChange={(event) =>
+              updateTask("culturalRelationalContext", event.target.value)
+            }
+            placeholder="Optional. Include only what is grounded in this task and context."
+            rows={3}
+            value={project.task.culturalRelationalContext ?? ""}
           />
         </label>
 

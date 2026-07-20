@@ -3,6 +3,7 @@ import {
   diagnoseRequestSchema,
   diagnosisOutputSchema,
 } from "@/lib/model-schemas";
+import { enforceDiagnosisBoundaries } from "@/lib/server/boundaries";
 import { invalidRequestResponse, modelResponse } from "@/lib/server/http";
 import { runStructuredModel } from "@/lib/server/openai";
 
@@ -17,5 +18,8 @@ export async function POST(request: Request) {
     parsed.data,
     diagnosisOutputSchema,
   );
+  if (result.ok) {
+    result.data = enforceDiagnosisBoundaries(parsed.data.task, result.data);
+  }
   return modelResponse(result);
 }

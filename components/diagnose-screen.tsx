@@ -298,6 +298,27 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           </section>
 
           <aside className="diagnosis-aside">
+            {(project.diagnosis.capabilityLensNotes?.length ?? 0) > 0 ? (
+              <DiagnosisList
+                items={project.diagnosis.capabilityLensNotes ?? []}
+                title="Capability lens"
+              />
+            ) : null}
+            {(project.diagnosis.taskDemandNotes?.length ?? 0) > 0 ? (
+              <DiagnosisList
+                items={project.diagnosis.taskDemandNotes ?? []}
+                title="Task demands"
+              />
+            ) : null}
+            {(project.diagnosis.culturalRelationalConsiderations?.length ?? 0) >
+            0 ? (
+              <DiagnosisList
+                items={
+                  project.diagnosis.culturalRelationalConsiderations ?? []
+                }
+                title="Cultural & relational context"
+              />
+            ) : null}
             <DiagnosisList
               items={project.diagnosis.currentEvidenceReveals}
               title="What current evidence reveals"
@@ -330,7 +351,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
             onClick={confirmDiagnosis}
             type="button"
           >
-            Confirm diagnosis <span aria-hidden="true">→</span>
+            Use this design focus <span aria-hidden="true">→</span>
           </button>
         </div>
       ) : null}

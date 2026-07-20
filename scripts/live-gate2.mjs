@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { scenarioFixtures } from "../lib/fixtures.ts";
+import { blankProject, scenarioFixtures } from "../lib/fixtures.ts";
 import {
   clarifyOutputSchema,
   diagnosisOutputSchema,
@@ -9,7 +9,31 @@ import {
 const baseUrl = process.env.VTD_BASE_URL || "http://localhost:3000";
 const results = [];
 
-for (const fixture of scenarioFixtures) {
+const blank = blankProject();
+blank.task = {
+  ...blank.task,
+  title: "Complete a pre-start machinery safety check",
+  description:
+    "Inspect a workshop machine, identify unsafe conditions and decide whether it can be started or must be isolated and escalated.",
+  intendedCapability:
+    "Recognise hazards, apply the pre-start standard and act responsibly before operating machinery.",
+  helpIdentifyCapabilityDimensions: true,
+  helpIdentifyUnderpinningDemands: true,
+  assessmentStakes: "high-stakes-final",
+  safetyCritical: true,
+  regulatedOrComplianceSensitive: true,
+  estimatedReadiness: "not-sure",
+};
+
+const liveCases = [
+  { source: "blank", project: blank },
+  ...scenarioFixtures.map((fixture) => ({
+    source: fixture.source,
+    project: fixture.project,
+  })),
+];
+
+for (const fixture of liveCases) {
   const clarify = await post("/api/design/clarify", {
     source: fixture.source,
     task: fixture.project.task,
@@ -38,6 +62,8 @@ for (const fixture of scenarioFixtures) {
   if (!fixture.project.task.considerLearnerAi) {
     assert.equal(diagnosisData.aiSubstitutionRisks.length, 0);
   }
+  assert.ok(Array.isArray(diagnosisData.capabilityLensNotes));
+  assert.ok(Array.isArray(diagnosisData.taskDemandNotes));
 
   const moments = await post("/api/design/moments", {
     task: fixture.project.task,
@@ -52,9 +78,20 @@ for (const fixture of scenarioFixtures) {
     assert.ok(moment.feedbackLoop.length > 0);
     assert.ok(moment.workloadFit.length > 0);
     assert.ok(moment.weakOrMissingEvidence.length > 0);
+    assert.ok(moment.exampleInContext.length > 0);
     if (!fixture.project.task.considerLearnerAi) {
       assert.equal(moment.aiPosition, "not-relevant");
     }
+  }
+  if (fixture.project.task.safetyCritical) {
+    assert.match(
+      [
+        ...diagnosisData.cautions,
+        ...momentsData.cautions,
+        ...momentsData.moments.map((moment) => moment.visibleEvidence),
+      ].join(" "),
+      /directly observed|observed performance|task[- ]result|equipment|product|real[- ]time/i,
+    );
   }
 
   const boundaryText = JSON.stringify({
@@ -63,7 +100,7 @@ for (const fixture of scenarioFixtures) {
   });
   assert.doesNotMatch(
     boundaryText,
-    /((automatically|definitively|conclusively) (proves?|verif(?:y|ies))|(this|the (plan|evidence|output)) (proves?|verif(?:y|ies)) capability)/i,
+    /((automatically|definitively|conclusively) (proves?|verif(?:y|ies))|(this|the (plan|evidence|output)) (proves?|verif(?:y|ies)) capability|capability assurance|automated assessment)/i,
   );
   const safetyText = [
     ...diagnosisData.cautions,
@@ -84,17 +121,80 @@ for (const fixture of scenarioFixtures) {
       .map((moment) => moment.conditions.join("+"))
       .join("|"),
     signature: momentsData.moments.map((moment) => moment.title).join("|"),
+    designFingerprint: momentsData.moments
+      .map(
+        (moment) =>
+          `${moment.title}|${moment.tutorMove}|${moment.visibleEvidence}|${moment.workloadFit}`,
+      )
+      .join("||"),
+    diagnosisSignature: [
+      ...diagnosisData.capabilityLensNotes,
+      ...diagnosisData.taskDemandNotes,
+      ...diagnosisData.readinessAndScaffolding,
+      diagnosisData.designOpportunity,
+    ].join("|"),
   });
 }
 
-assert.equal(new Set(results.map(({ signature }) => signature)).size, 3);
-assert.equal(new Set(results.map(({ conditionPattern }) => conditionPattern)).size, 3);
+assert.equal(new Set(results.map(({ signature }) => signature)).size, 4);
+assert.ok(new Set(results.map(({ conditionPattern }) => conditionPattern)).size >= 3);
+assert.equal(new Set(results.map(({ diagnosisSignature }) => diagnosisSignature)).size, 4);
+
+const baseFixture = scenarioFixtures.find(
+  ({ source }) => source === "flat-white",
+);
+const comparisonTask = {
+  ...baseFixture.project.task,
+  capabilityDimensions: ["do"],
+  underpinningDemands: ["technical-domain"],
+  assessmentStakes: "low-stakes-practice",
+  safetyCritical: false,
+  estimatedReadiness: "ready-independently",
+};
+const comparisonDiagnosis = await post("/api/design/diagnose", {
+  task: comparisonTask,
+  clarification: {
+    ...baseFixture.project.clarification,
+    questions: baseFixture.project.clarification.questions.map((question) => ({
+      ...question,
+      skipped: true,
+    })),
+    completed: true,
+  },
+});
+const comparisonDiagnosisData = diagnosisOutputSchema.parse(
+  comparisonDiagnosis.data,
+);
+const comparisonMoments = await post("/api/design/moments", {
+  task: comparisonTask,
+  diagnosis: { ...comparisonDiagnosisData, tutorConfirmed: true },
+});
+const comparisonMomentsData = momentsOutputSchema.parse(comparisonMoments.data);
+const baseline = results.find(({ source }) => source === "flat-white");
+const comparisonSignature = comparisonMomentsData.moments
+  .map(
+    (moment) =>
+      `${moment.title}|${moment.tutorMove}|${moment.visibleEvidence}|${moment.workloadFit}`,
+  )
+  .join("||");
+assert.notEqual(comparisonSignature, baseline.designFingerprint);
 
 console.log(
   JSON.stringify(
     {
-      gate: "Gate 2",
+      gate: "Stage 2.5A review",
       passed: true,
+      comparison: {
+        sameTask: "flat-white",
+        changedInputs: [
+          "stakes",
+          "estimated readiness",
+          "capability dimensions",
+          "underpinning demands",
+          "safety-critical flag",
+        ],
+        meaningfullyDifferent: true,
+      },
       scenarios: results.map((result) => ({
         source: result.source,
         model: result.model,

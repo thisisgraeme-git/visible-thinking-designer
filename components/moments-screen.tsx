@@ -156,6 +156,8 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
             "Describe what weak or missing evidence might look like.",
           feedbackLoop:
             "Describe how feedback will change the learner’s next action.",
+          exampleInContext:
+            "Add one concise example showing how this moment could look in the task.",
           aiPosition: project.task.considerLearnerAi
             ? project.task.defaultAiPosition
             : "not-relevant",
@@ -203,6 +205,15 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
         </div>
       </div>
 
+      <div className="feedback-ribbon feedback-ribbon-prominent">
+        <span aria-hidden="true">↻</span>
+        <p>
+          <strong>Feedback is the connective loop.</strong>
+          It matters when the learner interprets it and changes what happens
+          next.
+        </p>
+      </div>
+
       <div className="moment-stack">
         {project.moments.map((item, index) => (
           <MomentCard
@@ -229,15 +240,6 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           Add one tutor-designed moment
         </button>
       ) : null}
-
-      <div className="feedback-ribbon">
-        <span aria-hidden="true">↻</span>
-        <p>
-          <strong>Feedback is the connective loop.</strong>
-          It matters when the learner interprets it and changes what happens
-          next.
-        </p>
-      </div>
 
       <div className="action-row">
         <a
@@ -369,6 +371,18 @@ function MomentCard({
           value={moment.workloadFit}
         />
       </div>
+
+      <details className="moment-example">
+        <summary>Show an example in context</summary>
+        <MomentField
+          label="Editable task-specific example"
+          onChange={(value) => onUpdate("exampleInContext", value)}
+          value={
+            moment.exampleInContext ||
+            "Add one concise example showing how this moment could look in the task."
+          }
+        />
+      </details>
     </article>
   );
 }

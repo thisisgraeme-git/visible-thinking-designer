@@ -34,6 +34,7 @@ test("each scenario respects the Stage 1 visible-moment contract", () => {
       assert.ok(moment.workloadFit.trim().length > 0);
       assert.ok(moment.visibleEvidence.trim().length > 0);
       assert.ok(moment.weakOrMissingEvidence.trim().length > 0);
+      assert.ok(moment.exampleInContext.trim().length > 0);
       assert.doesNotMatch(
         [
           moment.purpose,

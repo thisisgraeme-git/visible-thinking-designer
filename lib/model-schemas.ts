@@ -22,6 +22,23 @@ export const taskSchema = z
     title: z.string().max(120),
     description: z.string().min(30).max(4000),
     intendedCapability: z.string().min(15).max(1200),
+    capabilityDimensions: z
+      .array(z.enum(["know", "do", "be-relate"]))
+      .max(3)
+      .default([]),
+    helpIdentifyCapabilityDimensions: z.boolean().default(false),
+    underpinningDemands: z
+      .array(
+        z.enum([
+          "technical-domain",
+          "language-literacy",
+          "numeracy",
+          "cultural-relational",
+        ]),
+      )
+      .max(4)
+      .default([]),
+    helpIdentifyUnderpinningDemands: z.boolean().default(false),
     learningSetting: z.enum([
       "vocational-trades",
       "foundation-bridging",
@@ -30,14 +47,30 @@ export const taskSchema = z
       "other",
     ]),
     learnerContextNotes: z.string().max(1200).optional(),
+    culturalRelationalContext: z.string().max(1200).optional(),
     currentEvidence: z.string().max(800).optional(),
     assessmentStakes: z.enum([
+      "low-stakes-practice",
+      "moderate-stakes-checkpoint",
+      "high-stakes-final",
+      "not-sure",
       "learning-activity",
       "formative",
       "summative",
       "workplace-practical",
       "other",
     ]),
+    safetyCritical: z.boolean().default(false),
+    regulatedOrComplianceSensitive: z.boolean().default(false),
+    estimatedReadiness: z
+      .enum([
+        "ready-independently",
+        "ready-with-support",
+        "not-yet-ready",
+        "mixed-across-group",
+        "not-sure",
+      ])
+      .default("not-sure"),
     considerLearnerAi: z.boolean(),
     defaultAiPosition: aiPositionSchema,
   })
@@ -98,6 +131,11 @@ export const diagnoseRequestSchema = z
 export const diagnosisOutputSchema = z
   .object({
     capabilitySummary: z.string().min(20).max(900),
+    capabilityLensNotes: z.array(z.string().min(5).max(350)).max(4),
+    taskDemandNotes: z.array(z.string().min(5).max(350)).max(5),
+    culturalRelationalConsiderations: z
+      .array(z.string().min(5).max(350))
+      .max(4),
     currentEvidenceReveals: z.array(z.string().min(5).max(350)).min(1).max(5),
     currentTaskStrengths: z.array(z.string().min(5).max(350)).min(1).max(5),
     invisibleThinking: z.array(z.string().min(5).max(350)).min(2).max(7),
@@ -125,6 +163,7 @@ export const momentSchema = z
     visibleEvidence: z.string().min(10).max(700),
     weakOrMissingEvidence: z.string().min(10).max(700),
     feedbackLoop: z.string().min(10).max(700),
+    exampleInContext: z.string().min(10).max(500),
     aiPosition: aiPositionSchema,
     workloadFit: z.string().min(5).max(350),
     caution: z.string().max(400),

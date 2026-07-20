@@ -30,6 +30,7 @@ const moment = (
   visibleEvidence,
   weakOrMissingEvidence,
   feedbackLoop,
+  exampleInContext: `For example, ${learnerAction.charAt(0).toLowerCase()}${learnerAction.slice(1)}`,
   aiPosition,
   workloadFit,
   caution,
@@ -52,12 +53,21 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "Prepare and serve a flat white to workplace standard while managing the flow of other orders during a busy café service.",
         intendedCapability:
           "Produce a consistent drink while managing workflow, diagnosing quality problems and adapting under service pressure.",
+        capabilityDimensions: ["know", "do", "be-relate"],
+        helpIdentifyCapabilityDimensions: false,
+        underpinningDemands: ["technical-domain", "numeracy"],
+        helpIdentifyUnderpinningDemands: false,
         learningSetting: "vocational-trades",
         learnerContextNotes:
           "Learners have practised espresso extraction and milk texturing separately. The design should support developing confidence without removing responsibility for quality decisions.",
         currentEvidence:
           "The finished beverage and the tutor’s general observation of performance.",
-        assessmentStakes: "workplace-practical",
+        assessmentStakes: "moderate-stakes-checkpoint",
+        safetyCritical: true,
+        regulatedOrComplianceSensitive: false,
+        estimatedReadiness: "ready-with-support",
+        culturalRelationalContext:
+          "Workplace service standards, customer expectations and respectful coordination with colleagues matter during the task.",
         considerLearnerAi: false,
         defaultAiPosition: "absent",
       },
@@ -87,6 +97,18 @@ export const scenarioFixtures: ScenarioFixture[] = [
       diagnosis: {
         capabilitySummary:
           "Coordinate production, judge quality and adapt workflow while maintaining a consistent café-standard result.",
+        capabilityLensNotes: [
+          "Know the café standard and the product signals that indicate quality.",
+          "Do the coordinated technical performance under authentic service pressure.",
+          "Be & Relate through responsible service and coordination with customers and colleagues.",
+        ],
+        taskDemandNotes: [
+          "Technical and domain demands include extraction, milk texture, timing and equipment use.",
+          "Numeracy matters through quantities, time and interpreting service parameters.",
+        ],
+        culturalRelationalConsiderations: [
+          "Customer expectations and team responsibilities shape what counts as an appropriate service response.",
+        ],
         currentEvidenceReveals: [
           "Whether the final beverage meets a visible quality standard",
           "Some aspects of pace and equipment handling",
@@ -196,12 +218,25 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "Respond to a dissatisfied client in a role-play, clarify the issue, propose an appropriate next action and complete a brief follow-up record.",
         intendedCapability:
           "Communicate professionally, interpret the issue, use policy and context, exercise judgement, adapt to the client response and document an appropriate next action.",
+        capabilityDimensions: ["know", "do", "be-relate"],
+        helpIdentifyCapabilityDimensions: false,
+        underpinningDemands: [
+          "technical-domain",
+          "language-literacy",
+          "cultural-relational",
+        ],
+        helpIdentifyUnderpinningDemands: false,
         learningSetting: "professional-applied",
         learnerContextNotes:
           "Learners know the service policy but have had limited practice managing emotionally charged conversations.",
         currentEvidence:
           "Completion of the role-play and the written follow-up record.",
-        assessmentStakes: "formative",
+        assessmentStakes: "low-stakes-practice",
+        safetyCritical: false,
+        regulatedOrComplianceSensitive: true,
+        estimatedReadiness: "mixed-across-group",
+        culturalRelationalContext:
+          "The client’s language, expectations, values and preferred ways of relating should shape how the learner listens and responds within policy.",
         considerLearnerAi: true,
         defaultAiPosition: "available-with-boundaries",
       },
@@ -231,6 +266,19 @@ export const scenarioFixtures: ScenarioFixture[] = [
       diagnosis: {
         capabilitySummary:
           "Interpret a client concern, regulate the interaction, use policy proportionately and adapt toward an appropriate resolution.",
+        capabilityLensNotes: [
+          "Know the service policy and scope of authority.",
+          "Do the live interpretation, response and documentation work.",
+          "Be & Relate through respect, emotional regulation and accountable professional judgement.",
+        ],
+        taskDemandNotes: [
+          "Language and literacy demands include listening, clarifying and documenting the outcome.",
+          "Cultural and relational demands shape how concern, respect and resolution are interpreted.",
+          "Technical and domain demands include applying policy without hiding behind it.",
+        ],
+        culturalRelationalConsiderations: [
+          "The learner should adapt to the client’s language and relational cues without treating one communication style as the professional norm.",
+        ],
         currentEvidenceReveals: [
           "Whether the learner completes the interaction",
           "The surface professionalism of the follow-up record",
@@ -344,11 +392,20 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "Write a short report comparing two approaches to improving workplace wellbeing and make an evidence-based recommendation.",
         intendedCapability:
           "Frame a problem, select and evaluate evidence, organise and synthesise ideas, explain judgement and revise a recommendation.",
+        capabilityDimensions: ["know", "do"],
+        helpIdentifyCapabilityDimensions: false,
+        underpinningDemands: ["technical-domain", "language-literacy"],
+        helpIdentifyUnderpinningDemands: false,
         learningSetting: "academic-degree",
         learnerContextNotes:
           "Learners have access to a curated reading set and may use generative AI for brainstorming and language support within declared boundaries.",
         currentEvidence: "The submitted polished report.",
-        assessmentStakes: "summative",
+        assessmentStakes: "high-stakes-final",
+        safetyCritical: false,
+        regulatedOrComplianceSensitive: false,
+        estimatedReadiness: "ready-independently",
+        culturalRelationalContext:
+          "The report should identify whose definitions of wellbeing and workplace responsibilities shape the comparison.",
         considerLearnerAi: true,
         defaultAiPosition: "deliberately-examined",
       },
@@ -386,6 +443,17 @@ export const scenarioFixtures: ScenarioFixture[] = [
       diagnosis: {
         capabilitySummary:
           "Build and revise an evidence-based comparison that leads to a defensible contextual recommendation.",
+        capabilityLensNotes: [
+          "Know the relevant wellbeing approaches and disciplinary criteria for evidence.",
+          "Do the framing, source evaluation, synthesis and revision work.",
+        ],
+        taskDemandNotes: [
+          "Language and literacy demands include synthesis, comparison and a defensible recommendation.",
+          "Technical and domain demands include judging source credibility and contextual relevance.",
+        ],
+        culturalRelationalConsiderations: [
+          "Definitions of wellbeing and responsibility should be located in the workplace and knowledge contexts represented by the sources.",
+        ],
         currentEvidenceReveals: [
           "The final organisation and clarity of the report",
           "The sources and claims that remain in the submitted version",
@@ -502,10 +570,18 @@ export const blankProject = (): VisibleThinkingProject => {
       title: "",
       description: "",
       intendedCapability: "",
+      capabilityDimensions: [],
+      helpIdentifyCapabilityDimensions: false,
+      underpinningDemands: [],
+      helpIdentifyUnderpinningDemands: false,
       learningSetting: "vocational-trades",
       learnerContextNotes: "",
+      culturalRelationalContext: "",
       currentEvidence: "",
-      assessmentStakes: "learning-activity",
+      assessmentStakes: "not-sure",
+      safetyCritical: false,
+      regulatedOrComplianceSensitive: false,
+      estimatedReadiness: "not-sure",
       considerLearnerAi: false,
       defaultAiPosition: "not-considered",
     },

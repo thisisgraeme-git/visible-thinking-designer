@@ -76,6 +76,7 @@ test("the output contract enforces bounded, selective moments", () => {
       assert.ok(moment.feedbackLoop.length > 0);
       assert.ok(moment.workloadFit.length > 0);
       assert.ok(moment.weakOrMissingEvidence.length > 0);
+      assert.ok(moment.exampleInContext.length > 0);
     }
   }
 });

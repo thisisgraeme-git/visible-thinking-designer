@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s · Visible Thinking Designer",
   },
   description:
-    "A calm design workbench for making consequential learner thinking visible.",
+    "A design workbench for making consequential learner thinking visible.",
   openGraph: {
     title: "Visible Thinking Designer",
     description:

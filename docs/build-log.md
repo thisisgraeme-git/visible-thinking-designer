@@ -154,3 +154,79 @@ and boundary outcomes without storing generated task content or secrets.
   behind a structured professional interaction.
 - Prompt versioning, runtime validation, failure recovery and deterministic
   rendering are concrete technical decisions suitable for the submission.
+
+## Stage 2.5A — Tutor Support and Capability-Lens Revision
+
+### Gate
+
+Authorised by Graeme on 20 July 2026. This revision is bounded to Stage 2.5A.
+Stage 2.5B file intake and Stage 3 persistence/export remain unauthorised and
+were not started.
+
+### What changed
+
+- Refined the landing and workbench copy for tertiary and vocational educators.
+- Raised informative and interactive text to approximately 15px or larger while
+  preserving the existing hierarchy and visual language.
+- Added optional, editable and non-measured Know, Do and Be & Relate capability
+  dimensions.
+- Added optional technical/domain, language and literacy, numeracy, and
+  cultural/relational task-demand lenses.
+- Added “Help me identify this” support and the optional capability sentence
+  starter.
+- Added current-evidence guidance, four stakes settings, safety and regulation
+  flags, and five tutor-estimated readiness settings.
+- Added grounded cultural and relational context input using the consolidated
+  review prompt.
+- Extended the structured diagnosis with selective capability, task-demand and
+  cultural/relational notes.
+- Extended every Visible Thinking Moment with `exampleInContext`, rendered
+  behind an editable “Show an example in context” disclosure.
+- Moved the feedback principle above the moment cards and increased its visual
+  prominence.
+- Added deterministic boundaries for AI-off mode, tutor-estimated readiness and
+  safety-critical evidence.
+
+### GPT-5.6 use
+
+Prompt version `vtd-2026-07-20.3` asks the model to suggest relevant missing
+lenses during clarification when the tutor requests help or is unsure. Lenses
+must remain selective and task-grounded; empty diagnosis arrays are preferable
+to invented relevance. Stakes, readiness and safety shape clarification,
+design focus, tutor moves and evidence. Safety-critical work must include
+directly observed performance or task-result evidence.
+
+### Tested
+
+- Completed the blank-task journey in the browser with AI left off.
+- Confirmed the clarification stage asked about regulation, readiness and
+  relevant missing capability/task-demand lenses.
+- Confirmed the design focus treated readiness as a tutor estimate, made the
+  selected lenses visible, and required performance-grounded safety evidence.
+- Confirmed task-specific examples are editable behind the requested disclosure
+  and the feedback principle appears above the cards.
+- Ran live GPT-5.6 clarify, diagnose and moments calls for the completed blank
+  task and all three canonical demonstration scenarios.
+- Each live scenario produced four moments with distinct selective Condition
+  patterns.
+- Ran a same-task comparison that changed stakes, readiness, selected lenses and
+  the safety flag; the diagnosis and moment designs changed materially.
+- Confirmed AI-off moments are deterministically `not-relevant`.
+- Confirmed no capability-assurance or automated-assessment claims were
+  introduced.
+- Passed 19 static/contract tests, type-check and lint before the production
+  build.
+
+### Evidence
+
+Machine-readable results are stored in
+`docs/evidence/stage25a-live-results.json`. They contain counts, Condition
+patterns and boundary outcomes only—no generated task content or secrets.
+
+### Boundary confirmation
+
+- No file upload or file-intake route, storage or interface was added.
+- No database, account, external persistence or new export mechanism was added.
+- Existing browser-local drafts and the existing print surface were preserved,
+  not expanded.
+- This build stops at the Stage 2.5A owner review gate.

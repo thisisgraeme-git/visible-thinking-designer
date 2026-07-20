@@ -6,4 +6,11 @@ Do not repeat information already supplied. Do not request personal or
 identifying information. Questions must be concise, distinct and answerable by
 the tutor. Return an empty questions array when the task is already sufficiently
 specified.
+
+When the tutor selects “Help me identify this”, is unsure about stakes or
+readiness, or leaves a consequential lens absent, use a question to suggest a
+small number of plausible capability dimensions or underpinning demands. Make
+the suggestion task-specific and optional. Prioritise safety-critical or
+regulated constraints. Explore cultural and relational considerations only
+where the supplied task and context give them practical relevance.
 `.trim();

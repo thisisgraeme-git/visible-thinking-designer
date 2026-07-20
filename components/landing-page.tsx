@@ -39,12 +39,12 @@ export function LandingPage() {
             <small>Designer</small>
           </span>
         </Link>
-        <p>For post-school tertiary and vocational educators</p>
+        <p>For tertiary and vocational educators</p>
       </header>
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">A calm learning-design workbench</p>
+          <p className="eyebrow">A learning-design workbench</p>
           <h1>Design learning that leaves thinking visible.</h1>
           <p className="hero-lead">
             Bring one real task. Identify what the finished work cannot show.

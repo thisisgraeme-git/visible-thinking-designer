@@ -168,6 +168,14 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     {moment.feedbackLoop}
                   </p>
                 </div>
+                <details className="moment-example plan-moment-example no-print">
+                  <summary>Show an example in context</summary>
+                  <p>{moment.exampleInContext}</p>
+                </details>
+                <div className="print-only plan-example-print">
+                  <strong>Example in context</strong>
+                  <p>{moment.exampleInContext}</p>
+                </div>
               </div>
             </article>
           ))}

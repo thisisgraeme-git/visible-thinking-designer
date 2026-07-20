@@ -19,11 +19,30 @@ export type LearningSetting =
   | "other";
 
 export type AssessmentStakes =
+  | "low-stakes-practice"
+  | "moderate-stakes-checkpoint"
+  | "high-stakes-final"
+  | "not-sure"
   | "learning-activity"
   | "formative"
   | "summative"
   | "workplace-practical"
   | "other";
+
+export type CapabilityDimension = "know" | "do" | "be-relate";
+
+export type UnderpinningDemand =
+  | "technical-domain"
+  | "language-literacy"
+  | "numeracy"
+  | "cultural-relational";
+
+export type EstimatedReadiness =
+  | "ready-independently"
+  | "ready-with-support"
+  | "not-yet-ready"
+  | "mixed-across-group"
+  | "not-sure";
 
 export type VisibleCondition =
   | "attempt"
@@ -50,6 +69,9 @@ export interface ClarificationQuestion {
 
 export interface TaskDiagnosis {
   capabilitySummary: string;
+  capabilityLensNotes: string[];
+  taskDemandNotes: string[];
+  culturalRelationalConsiderations: string[];
   currentEvidenceReveals: string[];
   currentTaskStrengths: string[];
   invisibleThinking: string[];
@@ -72,6 +94,7 @@ export interface VisibleThinkingMoment {
   visibleEvidence: string;
   weakOrMissingEvidence: string;
   feedbackLoop: string;
+  exampleInContext: string;
   aiPosition: AiPosition;
   workloadFit: string;
   caution?: string;
@@ -122,10 +145,18 @@ export interface VisibleThinkingProject {
     title: string;
     description: string;
     intendedCapability: string;
+    capabilityDimensions?: CapabilityDimension[];
+    helpIdentifyCapabilityDimensions?: boolean;
+    underpinningDemands?: UnderpinningDemand[];
+    helpIdentifyUnderpinningDemands?: boolean;
     learningSetting: LearningSetting;
     learnerContextNotes?: string;
+    culturalRelationalContext?: string;
     currentEvidence?: string;
     assessmentStakes: AssessmentStakes;
+    safetyCritical?: boolean;
+    regulatedOrComplianceSensitive?: boolean;
+    estimatedReadiness?: EstimatedReadiness;
     considerLearnerAi: boolean;
     defaultAiPosition: AiPosition;
   };

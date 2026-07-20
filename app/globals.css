@@ -792,6 +792,7 @@ h4 {
 }
 
 .form-card > label,
+.form-card > .field-group,
 .choice-field {
   display: block;
   margin-bottom: 28px;
@@ -1473,6 +1474,201 @@ select:hover {
   padding-top: 18px;
 }
 
+/* Stage 2.5A tutor-support and accessibility */
+
+.sentence-starter {
+  background: transparent;
+  border: 0;
+  color: var(--teal);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 750;
+  margin-top: 9px;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 4px;
+}
+
+label > small.sentence-starter-copy {
+  margin: 5px 0 0;
+}
+
+.field-group > small.sentence-starter-copy {
+  color: var(--muted);
+  display: block;
+  font-size: 0.9375rem;
+  margin: 5px 0 0;
+}
+
+.lens-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 0.9fr 1.1fr;
+  margin-bottom: 28px;
+}
+
+.choice-field.lens-field {
+  margin: 0;
+}
+
+.lens-field > small {
+  color: var(--muted);
+  display: block;
+  font-size: 0.9375rem;
+  margin: -4px 0 13px;
+}
+
+.choice-grid {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.choice-grid.three-up {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.chip-choice {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  min-height: 44px;
+  padding: 7px 11px;
+}
+
+.chip-choice:has(input:checked) {
+  background: var(--teal-soft);
+  border-color: var(--teal);
+}
+
+.chip-choice input {
+  accent-color: var(--teal);
+  min-height: 18px;
+  width: 18px;
+}
+
+.chip-choice span {
+  font-size: 0.9375rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.help-choice {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 13px;
+}
+
+.flag-stack {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.moment-example {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.moment-example summary {
+  color: var(--teal);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 750;
+}
+
+.moment-example label,
+.moment-example > p {
+  margin-top: 14px;
+}
+
+.plan-moment-example > p {
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.feedback-ribbon-prominent {
+  border: 1px solid rgba(39, 108, 154, 0.28);
+  margin-bottom: 22px;
+  margin-top: 0;
+  padding: 20px 22px;
+}
+
+.feedback-ribbon-prominent p {
+  font-size: 1rem;
+}
+
+/* Informative and interactive copy is approximately 15px or larger. */
+.button,
+.landing-nav > p,
+.boundary-copy,
+.example-card > p:not(.eyebrow),
+.recent-card p,
+.example-card a,
+.recent-card strong,
+.recent-card > span,
+.landing-footer,
+.save-status,
+.rail-kicker,
+.stage-rail li,
+.stage-rail li span,
+.rail-note p,
+.project-name,
+.stage-count,
+.guidance-banner,
+.model-status p:last-child,
+.fallback-note,
+label > span,
+.choice-field legend,
+.moment-card label > span,
+.plan-notes label > span,
+label > small,
+label > em,
+.question-progress,
+.why-note,
+.aside-card h3,
+.aside-card ul,
+.moments-intro > p,
+.condition-key span,
+.condition-chips span,
+.condition-chips em,
+.moment-heading .timing-input,
+.moment-card textarea,
+.feedback-ribbon p,
+.plan-toolbar p,
+.toolbar-button,
+.plan-cover > div > p:last-child,
+.plan-status span,
+.plan-status strong,
+.plan-capability > p:last-child,
+.evidence-shift span,
+.plan-moment-grid span,
+.plan-feedback strong,
+.evidence-shift p,
+.plan-moment-heading p,
+.plan-moment-grid p,
+.plan-feedback p,
+.plan-boundaries ul,
+.model-note {
+  font-size: 0.9375rem;
+}
+
+.eyebrow,
+.orbit-question span,
+.condition > span,
+.condition p,
+.condition strong,
+.orbit-note,
+.outcome-points span {
+  font-size: 0.875rem;
+}
+
 .print-only {
   display: none;
 }
@@ -1619,6 +1815,9 @@ select:hover {
   }
 
   .field-row.two-column,
+  .lens-layout,
+  .choice-grid,
+  .choice-grid.three-up,
   .moment-grid,
   .moment-footer,
   .plan-moment-grid,
