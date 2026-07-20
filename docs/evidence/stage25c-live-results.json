@@ -1,0 +1,53 @@
+{
+  "gate": "Stage 2.5C review",
+  "passed": true,
+  "comparison": {
+    "sameTask": "flat-white",
+    "changedInputs": [
+      "stakes",
+      "estimated readiness",
+      "capability dimensions",
+      "underpinning demands",
+      "safety-critical flag"
+    ],
+    "meaningfullyDifferent": true
+  },
+  "scenarios": [
+    {
+      "source": "blank",
+      "model": "gpt-5.6",
+      "promptVersion": "vtd-2026-07-20.4",
+      "clarificationQuestions": 3,
+      "moments": 3,
+      "conditionPattern": "attempt+question|check+explain-judgement|apply+explain-judgement",
+      "evidencePattern": "learning+diagnosis+feedback:practical-performance+tutor-observation+feedback-led-revision|judgement+verification:practical-performance+tutor-observation+live-explanation|judgement+verification+feedback:changed-context-application+practical-performance+tutor-observation"
+    },
+    {
+      "source": "flat-white",
+      "model": "gpt-5.6",
+      "promptVersion": "vtd-2026-07-20.4",
+      "clarificationQuestions": 3,
+      "moments": 4,
+      "conditionPattern": "attempt+check|check+explain-judgement|question+explain-judgement|apply+check",
+      "evidencePattern": "diagnosis+feedback:tutor-observation+practical-performance|diagnosis+judgement+feedback:practical-performance+tutor-observation+live-explanation|learning+feedback:professional-conversation+live-explanation+feedback-led-revision|judgement+verification:changed-context-application+practical-performance+tutor-observation"
+    },
+    {
+      "source": "dissatisfied-client",
+      "model": "gpt-5.6",
+      "promptVersion": "vtd-2026-07-20.4",
+      "clarificationQuestions": 2,
+      "moments": 4,
+      "conditionPattern": "attempt+question|check+explain-judgement|check|apply",
+      "evidencePattern": "learning+diagnosis+feedback:practical-performance+tutor-observation|feedback+judgement:live-explanation+professional-conversation|learning+feedback+judgement:produced-artefact+feedback-led-revision|learning+judgement:changed-context-application+practical-performance+tutor-observation"
+    },
+    {
+      "source": "short-report",
+      "model": "gpt-5.6",
+      "promptVersion": "vtd-2026-07-20.4",
+      "clarificationQuestions": 3,
+      "moments": 3,
+      "conditionPattern": "attempt+explain-judgement|question+explain-judgement+check|apply+explain-judgement",
+      "evidencePattern": "judgement+feedback:produced-artefact|diagnosis+judgement+verification:live-explanation+professional-conversation|feedback+judgement+verification:changed-context-application+feedback-led-revision+produced-artefact"
+    }
+  ]
+}

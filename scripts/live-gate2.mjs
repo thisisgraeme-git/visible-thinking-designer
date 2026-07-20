@@ -72,11 +72,37 @@ for (const fixture of liveCases) {
   const momentsData = momentsOutputSchema.parse(moments.data);
   assert.ok(momentsData.moments.length >= 3);
   assert.ok(momentsData.moments.length <= 5);
+  assert.ok(momentsData.evidencePatternRationale.length >= 20);
+  assert.equal(Array.isArray(momentsData.changedCondition), false);
+  assert.ok(
+    momentsData.moments.some(
+      (moment) =>
+        moment.id === momentsData.changedCondition.momentId &&
+        moment.conditions.includes("apply"),
+    ),
+  );
+  assert.ok(
+    momentsData.integrityWarnings.every(
+      ({ source }) => source === "model",
+    ),
+  );
   for (const moment of momentsData.moments) {
     assert.ok(moment.conditions.length >= 1);
     assert.ok(moment.conditions.length <= 3);
     assert.ok(moment.feedbackLoop.length > 0);
-    assert.ok(moment.workloadFit.length > 0);
+    assert.ok(moment.feedbackUptake.length > 0);
+    assert.ok(moment.workload.estimatedTime.length > 0);
+    assert.ok(moment.workload.frequency.length > 0);
+    assert.ok(moment.workload.recordingBurden.length > 0);
+    assert.ok(moment.evidencePurposes.length >= 1);
+    assert.ok(moment.evidencePurposes.length <= 3);
+    assert.ok(moment.evidenceModes.length >= 1);
+    assert.ok(moment.evidenceModes.length <= 3);
+    assert.ok(moment.supportBoundary.tutorMay.length > 0);
+    assert.ok(moment.supportBoundary.learnerResponsibility.length > 0);
+    assert.ok(["observe-and-use", "brief-note", "formal-record"].includes(
+      moment.retention.level,
+    ));
     assert.ok(moment.weakOrMissingEvidence.length > 0);
     assert.ok(moment.exampleInContext.length > 0);
     if (!fixture.project.task.considerLearnerAi) {
@@ -100,7 +126,7 @@ for (const fixture of liveCases) {
   });
   assert.doesNotMatch(
     boundaryText,
-    /((automatically|definitively|conclusively) (proves?|verif(?:y|ies))|(this|the (plan|evidence|output)) (proves?|verif(?:y|ies)) capability|capability assurance|automated assessment)/i,
+    /((automatically|definitively|conclusively) (proves?|verif(?:y|ies))|(this|the (plan|evidence|output)) (proves?|verif(?:y|ies)) capability|capability assurance|automated assessment|confidence percentage|evidence-strength rating|assurance status)/i,
   );
   const safetyText = [
     ...diagnosisData.cautions,
@@ -108,7 +134,7 @@ for (const fixture of liveCases) {
   ].join(" ");
   assert.match(
     safetyText,
-    /(do not|does not|not .*proof|professional judgement|tutor judgement)/i,
+    /(do not|does not|not .*proof|professional judgement|tutor judgement|cannot stand alone|alone is insufficient|no single)/i,
   );
 
   results.push({
@@ -120,11 +146,17 @@ for (const fixture of liveCases) {
     conditionPattern: momentsData.moments
       .map((moment) => moment.conditions.join("+"))
       .join("|"),
+    evidencePattern: momentsData.moments
+      .map(
+        (moment) =>
+          `${moment.evidencePurposes.join("+")}:${moment.evidenceModes.join("+")}`,
+      )
+      .join("|"),
     signature: momentsData.moments.map((moment) => moment.title).join("|"),
     designFingerprint: momentsData.moments
       .map(
         (moment) =>
-          `${moment.title}|${moment.tutorMove}|${moment.visibleEvidence}|${moment.workloadFit}`,
+          `${moment.title}|${moment.tutorMove}|${moment.visibleEvidence}|${moment.workload.estimatedTime}`,
       )
       .join("||"),
     diagnosisSignature: [
@@ -174,7 +206,7 @@ const baseline = results.find(({ source }) => source === "flat-white");
 const comparisonSignature = comparisonMomentsData.moments
   .map(
     (moment) =>
-      `${moment.title}|${moment.tutorMove}|${moment.visibleEvidence}|${moment.workloadFit}`,
+      `${moment.title}|${moment.tutorMove}|${moment.visibleEvidence}|${moment.workload.estimatedTime}`,
   )
   .join("||");
 assert.notEqual(comparisonSignature, baseline.designFingerprint);
@@ -182,7 +214,7 @@ assert.notEqual(comparisonSignature, baseline.designFingerprint);
 console.log(
   JSON.stringify(
     {
-      gate: "Stage 2.5A review",
+      gate: "Stage 2.5C review",
       passed: true,
       comparison: {
         sameTask: "flat-white",
@@ -202,6 +234,7 @@ console.log(
         clarificationQuestions: result.clarificationQuestions,
         moments: result.moments,
         conditionPattern: result.conditionPattern,
+        evidencePattern: result.evidencePattern,
       })),
     },
     null,

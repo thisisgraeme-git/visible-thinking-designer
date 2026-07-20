@@ -44,6 +44,9 @@ function makeGenericDesign(project: VisibleThinkingProject) {
   const aiPosition = project.task.considerLearnerAi
     ? project.task.defaultAiPosition
     : "not-relevant";
+  const firstMomentId = crypto.randomUUID();
+  const checkMomentId = crypto.randomUUID();
+  const applyMomentId = crypto.randomUUID();
   return {
     ...project,
     diagnosis: {
@@ -99,66 +102,126 @@ function makeGenericDesign(project: VisibleThinkingProject) {
     },
     moments: [
       {
-        id: crypto.randomUUID(),
+        id: firstMomentId,
         title: "Name the first approach",
         timing: "Before substantial assistance",
         purpose: "Surface the learner’s initial framing and plan.",
+        journeyPhase: "before-task",
         conditions: ["attempt", "question"] as const,
+        evidencePurposes: ["learning", "diagnosis"] as const,
+        evidenceModes: ["live-explanation"] as const,
         learnerAction:
           "State the proposed approach, one important uncertainty and the first check they will use.",
         tutorMove:
           "Ask one focused question that tests the plan without prescribing it.",
+        supportBoundary: {
+          tutorMay:
+            "Ask one focused question that tests the plan without prescribing it.",
+          learnerResponsibility:
+            "Frame the approach, name the uncertainty and choose the first check.",
+        },
         visibleEvidence:
           "A context-aware starting point that the learner can revisit.",
         weakOrMissingEvidence:
           "A generic plan disconnected from the actual task.",
         feedbackLoop:
           "The first attempt provides feedback; the learner identifies what should change next.",
+        feedbackUptake:
+          "The learner revises the first approach or confirms it with a task-grounded reason.",
         exampleInContext: `For ${project.task.title || "this task"}, the learner names the first decision they will make and the signal they will check.`,
         aiPosition,
-        workloadFit: "Low — a short opening exchange.",
+        retention: {
+          level: "observe-and-use",
+          note: "Use the response in the moment; no separate record is required.",
+        },
+        workload: {
+          estimatedTime: "About 30–60 seconds",
+          frequency: "Once before substantial assistance",
+          recordingBurden: "None",
+          activityRelationship: "embedded",
+        },
         source: "model" as const,
       },
       {
-        id: crypto.randomUUID(),
+        id: checkMomentId,
         title: "Check a consequential decision",
         timing: "At the first meaningful decision point",
         purpose: "Make discipline-grounded checking visible.",
+        journeyPhase: "during-task",
         conditions: ["check", "explain-judgement"] as const,
+        evidencePurposes: ["feedback", "judgement"] as const,
+        evidenceModes: ["live-explanation", "tutor-observation"] as const,
         learnerAction:
           "Use relevant evidence, standards or task signals to defend or revise one decision.",
         tutorMove:
           "Ask: “What would make you change this decision?”",
+        supportBoundary: {
+          tutorMay:
+            "Ask what evidence or task signal would change the decision.",
+          learnerResponsibility:
+            "Use the relevant standard or signal to defend or revise the decision.",
+        },
         visibleEvidence:
           "A judgement connected to the real standards and behaviour of the task.",
         weakOrMissingEvidence:
           "A claim of confidence without a relevant check.",
         feedbackLoop:
           "The check or follow-up question changes the learner’s next action.",
+        feedbackUptake:
+          "The learner revises the decision or confirms it against the relevant check.",
         exampleInContext: `During ${project.task.title || "the task"}, the tutor samples one consequential decision and asks what evidence would reverse it.`,
         aiPosition,
-        workloadFit: "Low — sample one decision, not every step.",
+        retention: {
+          level: "observe-and-use",
+          note: "Sample the decision without creating a parallel record.",
+        },
+        workload: {
+          estimatedTime: "Embedded; about 1–2 minutes",
+          frequency: "Sample one decision, not every step",
+          recordingBurden: "None unless the task already requires a note",
+          activityRelationship: "embedded",
+        },
         source: "model" as const,
       },
       {
-        id: crypto.randomUUID(),
+        id: applyMomentId,
         title: "Adapt under a changed condition",
         timing: "After initial feedback",
         purpose: "Reveal transfer rather than repetition.",
+        journeyPhase: "changed-context",
         conditions: ["apply"] as const,
+        evidencePurposes: ["feedback", "judgement", "verification"] as const,
+        evidenceModes: ["changed-context-application"] as const,
         learnerAction:
           "Adapt the approach when one authentic constraint, audience need or piece of evidence changes.",
         tutorMove:
           "Introduce one proportionate change and ask what should be preserved.",
+        supportBoundary: {
+          tutorMay:
+            "Introduce the single changed condition and ask what should remain stable.",
+          learnerResponsibility:
+            "Adapt the approach while preserving the intended capability and task standard.",
+        },
         visibleEvidence:
           "An adaptation that remains aligned with the intended capability.",
         weakOrMissingEvidence:
           "Repeating the original response despite the changed condition.",
         feedbackLoop:
           "The changed outcome becomes feedback for the learner’s final refinement.",
+        feedbackUptake:
+          "The learner makes one final refinement and explains what the variation changed.",
         exampleInContext: `Repeat one part of ${project.task.title || "the task"} after changing an authentic constraint, then ask what the learner preserved and changed.`,
         aiPosition,
-        workloadFit: "Medium — one changed condition.",
+        retention: {
+          level: "observe-and-use",
+          note: "Use the changed application in the tutor’s judgement without extra capture.",
+        },
+        workload: {
+          estimatedTime: "About 2–5 minutes",
+          frequency: "One changed condition",
+          recordingBurden: "No additional record planned",
+          activityRelationship: "embedded",
+        },
         source: "model" as const,
       },
     ],
@@ -170,8 +233,20 @@ function makeGenericDesign(project: VisibleThinkingProject) {
         toward:
           "Finished work plus selected evidence of framing, checking and adaptation",
       },
+      evidencePatternRationale:
+        "The pattern connects initial framing, one consequential check and one changed-context application so the learner’s decisions become visible without documenting every step.",
       feedbackPattern:
         "Feedback is used at each selected moment to change what happens next.",
+      changedCondition: {
+        momentId: applyMomentId,
+        changes:
+          "One authentic constraint, audience need or piece of evidence changes.",
+        remainsConstant:
+          "The intended capability, core task standard and learner responsibility remain constant.",
+        rationale:
+          "The single variation reveals whether the learner can adapt rather than repeat the original response.",
+      },
+      integrityWarnings: [],
       implementationNotes: [
         "Use the moments inside the existing task rather than adding a parallel assessment.",
       ],

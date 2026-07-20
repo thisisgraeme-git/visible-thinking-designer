@@ -31,7 +31,10 @@ test("each scenario respects the Stage 1 visible-moment contract", () => {
       );
       assert.ok(moment.conditions.every((item) => allowedConditions.has(item)));
       assert.ok(moment.feedbackLoop.trim().length > 0);
-      assert.ok(moment.workloadFit.trim().length > 0);
+      assert.ok(moment.feedbackUptake.trim().length > 0);
+      assert.ok(moment.workload.estimatedTime.trim().length > 0);
+      assert.ok(moment.workload.frequency.trim().length > 0);
+      assert.ok(moment.workload.recordingBurden.trim().length > 0);
       assert.ok(moment.visibleEvidence.trim().length > 0);
       assert.ok(moment.weakOrMissingEvidence.trim().length > 0);
       assert.ok(moment.exampleInContext.trim().length > 0);

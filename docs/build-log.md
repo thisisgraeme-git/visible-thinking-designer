@@ -230,3 +230,92 @@ patterns and boundary outcomes only—no generated task content or secrets.
 - Existing browser-local drafts and the existing print surface were preserved,
   not expanded.
 - This build stops at the Stage 2.5A owner review gate.
+
+## Stage 2.5C — Evidence Pattern and Proportionate Verification Architecture
+
+### Gate
+
+Authorised by Graeme on 20 July 2026. This implementation is bounded to the
+pre-hackathon Stage 2.5C slice. Stage 2.5B task-file intake remains separately
+planned. Stage 3 persistence and export remain unauthorised and were not
+started.
+
+### What changed
+
+- Extended each moment with selective evidence purposes, evidence modes,
+  journey phase, tutor/learner support boundary, visibility and retention,
+  feedback uptake, and concrete workload properties.
+- Added one evidence-pattern rationale and exactly one changed condition with
+  an explicit variation, held-constant demands and capability rationale.
+- Preserved task-level learner-AI intent while allowing relevant moment-level
+  AI positions through the existing moments endpoint.
+- Added model-generated professional-review suggestions without adding a
+  second review call.
+- Added a shared deterministic integrity checker for chronology, exact
+  duplication, text-heavy verification, unsupported verification, missing
+  feedback uptake, unnecessary retained capture, incomplete support boundaries,
+  changed-condition linkage and safety-critical grounding.
+- Recalculate deterministic points after moment editing, reordering and
+  deletion. Tutor-facing language uses “Points to review” and “Review before
+  use”; checks are not presented as failures or verified findings.
+- Kept detailed properties in a collapsed “Evidence details” disclosure and
+  retained the existing four-stage workflow and three-to-five moment limit.
+- Completed the final-plan renderer for pattern rationale, feedback pattern,
+  purposes, modes, support boundaries, retention, workload, moment-level AI,
+  feedback uptake, changed condition and review points.
+- Normalised existing Stage 2.5A browser-local drafts at read/save time without
+  changing the `0.1` project-storage schema or creating a persistence migration.
+
+### GPT-5.6 use
+
+Prompt version `vtd-2026-07-20.4` asks the existing moments-generation call to
+construct a coherent, proportionate pattern before returning three to five
+moments. It distinguishes developmental evidence from judgement and
+verification, allows AI-producible developmental work, and pairs consequential
+verification with grounded modes where needed.
+
+The model generates concise professional-review suggestions for semantic
+questions such as fragmentation, scaffolding overreach, unnecessary capture,
+capability drift and overloaded variation. These suggestions remain separate
+from deterministic structural checks and do not constitute assurance.
+
+### Tested
+
+- Passed 28 static, schema, safeguard, compatibility, renderer and integrity
+  tests.
+- Passed TypeScript type checking and lint.
+- Passed the production build across all app and API routes.
+- Ran live GPT-5.6 clarification, diagnosis and enriched moments calls for the
+  completed blank task and all three canonical demonstrations.
+- Live outputs returned three or four moments, one changed condition linked to
+  Apply, selective purpose/mode combinations and distinct evidence patterns.
+- Ran a same-task comparison changing stakes, readiness, lenses and the safety
+  flag; the design changed materially.
+- Confirmed AI-off moments remain deterministically `not-relevant`.
+- Confirmed safety-critical work retains directly observed performance or
+  task-result evidence.
+- Confirmed developmental AI-producible text is allowed while unsupported
+  judgement or verification produces a review point.
+- Confirmed no scoring, evidence-strength ratings, confidence percentages,
+  assurance status, learner records, capability-assurance or automated
+  assessment claims were introduced.
+
+### Evidence
+
+Machine-readable live results are stored in
+`docs/evidence/stage25c-live-results.json`. They contain counts, Condition
+patterns and evidence-purpose/mode patterns only—no generated task content,
+learner information or secrets.
+
+### Compatibility and boundary confirmation
+
+- The local project schema and storage key remain `0.1`. Missing Stage 2.5C
+  moment properties are conservatively normalised for older Stage 2.5A drafts;
+  old drafts do not receive an invented evidence-pattern rationale or changed
+  condition.
+- No file upload, file parser, intake route or file storage was added.
+- No database, account, learner record, external persistence or new export
+  mechanism was added.
+- No second model reviewer, score, confidence percentage, strength rating or
+  assurance state was added.
+- This build stops at the Stage 2.5C owner review gate.

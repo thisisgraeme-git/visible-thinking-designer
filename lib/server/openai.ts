@@ -40,7 +40,7 @@ export async function runStructuredModel<T>(
         verbosity: "low",
       },
       store: false,
-      max_output_tokens: stageName === "moments" ? 6000 : 3500,
+      max_output_tokens: stageName === "moments" ? 7500 : 3500,
     });
 
     if (!response.output_parsed) {

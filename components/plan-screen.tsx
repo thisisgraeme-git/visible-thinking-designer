@@ -3,8 +3,21 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "./app-shell";
+import {
+  activityRelationshipLabels,
+  aiPositionLabels,
+  evidenceModeLabels,
+  evidencePurposeLabels,
+  journeyPhaseLabels,
+  retentionLabels,
+} from "@/lib/evidence-options";
+import {
+  assessPlanIntegrity,
+  combineIntegrityWarnings,
+} from "@/lib/plan-integrity";
 import { duplicateProject, loadProject, saveProject } from "@/lib/storage";
 import type {
+  IntegrityWarning,
   VisibleCondition,
   VisibleThinkingProject,
 } from "@/lib/types";
@@ -37,6 +50,14 @@ export function PlanScreen({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   if (!project) return <div className="page-loading">Rendering plan…</div>;
+  const reviewPoints = combineIntegrityWarnings(
+    project.plan.integrityWarnings,
+    assessPlanIntegrity(
+      project.task,
+      project.moments,
+      project.plan.changedCondition,
+    ),
+  );
 
   const saveNotes = (value: string) => {
     const updated = saveProject({
@@ -127,6 +148,22 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           </div>
         </section>
 
+        {project.plan.evidencePatternRationale ? (
+          <section className="pattern-rationale">
+            <p className="eyebrow">Why this evidence pattern works</p>
+            <p>{project.plan.evidencePatternRationale}</p>
+            {project.plan.feedbackPattern ? (
+              <div className="pattern-feedback">
+                <span aria-hidden="true">↻</span>
+                <p>
+                  <strong>Feedback across the pattern</strong>
+                  {project.plan.feedbackPattern}
+                </p>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className="plan-moments">
           <div className="plan-section-heading">
             <p className="eyebrow">Selected moments</p>
@@ -139,7 +176,9 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                 <div className="plan-moment-heading">
                   <div>
                     <h4>{moment.title}</h4>
-                    <p>{moment.timing}</p>
+                    <p>
+                      {moment.timing} · {journeyPhaseLabels[moment.journeyPhase]}
+                    </p>
                   </div>
                   <div className="condition-chips">
                     {moment.conditions.map((condition) => (
@@ -149,6 +188,20 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     ))}
                   </div>
                 </div>
+                <p className="plan-moment-purpose">{moment.purpose}</p>
+                <div
+                  className="evidence-summary-chips plan-evidence-chips"
+                  aria-label="Evidence purposes and modes"
+                >
+                  {moment.evidencePurposes.map((purpose) => (
+                    <span key={purpose}>
+                      {evidencePurposeLabels[purpose]}
+                    </span>
+                  ))}
+                  {moment.evidenceModes.map((mode) => (
+                    <em key={mode}>{evidenceModeLabels[mode]}</em>
+                  ))}
+                </div>
                 <div className="plan-moment-grid">
                   <PlanDetail label="Learner action" value={moment.learnerAction} />
                   <PlanDetail label="Tutor move" value={moment.tutorMove} />
@@ -157,8 +210,8 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     value={moment.visibleEvidence}
                   />
                   <PlanDetail
-                    label="Workload fit"
-                    value={moment.workloadFit}
+                    label="Weak or missing evidence"
+                    value={moment.weakOrMissingEvidence}
                   />
                 </div>
                 <div className="plan-feedback">
@@ -167,6 +220,39 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     <strong>Feedback loop</strong>
                     {moment.feedbackLoop}
                   </p>
+                  <p>
+                    <strong>What the learner changes next</strong>
+                    {moment.feedbackUptake}
+                  </p>
+                </div>
+                <div className="plan-evidence-details">
+                  <PlanDetail
+                    label="Tutor may prompt or cue"
+                    value={moment.supportBoundary.tutorMay}
+                  />
+                  <PlanDetail
+                    label="Learner responsibility"
+                    value={moment.supportBoundary.learnerResponsibility}
+                  />
+                  <PlanDetail
+                    label="Visibility and retention"
+                    value={`${retentionLabels[moment.retention.level]} — ${
+                      moment.retention.note
+                    }`}
+                  />
+                  <PlanDetail
+                    label="Concrete workload"
+                    value={formatWorkload(moment)}
+                  />
+                  {project.task.considerLearnerAi ? (
+                    <PlanDetail
+                      label="AI position for this moment"
+                      value={aiPositionLabels[moment.aiPosition]}
+                    />
+                  ) : null}
+                  {moment.caution ? (
+                    <PlanDetail label="Moment caution" value={moment.caution} />
+                  ) : null}
                 </div>
                 <details className="moment-example plan-moment-example no-print">
                   <summary>Show an example in context</summary>
@@ -180,6 +266,35 @@ export function PlanScreen({ projectId }: { projectId: string }) {
             </article>
           ))}
         </section>
+
+        {project.plan.changedCondition ? (
+          <section className="plan-changed-condition">
+            <p className="eyebrow">One changed condition</p>
+            <h3>
+              {project.moments.find(
+                ({ id }) => id === project.plan.changedCondition?.momentId,
+              )?.title ?? "Apply under a meaningful variation"}
+            </h3>
+            <div>
+              <PlanDetail
+                label="What changes"
+                value={project.plan.changedCondition.changes}
+              />
+              <PlanDetail
+                label="What remains constant"
+                value={project.plan.changedCondition.remainsConstant}
+              />
+              <PlanDetail
+                label="Why this helps reveal capability"
+                value={project.plan.changedCondition.rationale}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {reviewPoints.length > 0 ? (
+          <PlanReviewPoints points={reviewPoints} />
+        ) : null}
 
         <section className="plan-notes">
           <div>
@@ -248,6 +363,68 @@ function PlanDetail({ label, value }: { label: string; value: string }) {
     <div>
       <span>{label}</span>
       <p>{value}</p>
+    </div>
+  );
+}
+
+function formatWorkload(
+  moment: VisibleThinkingProject["moments"][number],
+): string {
+  return [
+    moment.workload.estimatedTime,
+    moment.workload.frequency,
+    moment.workload.recordingBurden,
+    activityRelationshipLabels[moment.workload.activityRelationship],
+  ]
+    .map((value) => value.trim().replace(/[.;]+$/, ""))
+    .join("; ")
+    .concat(".");
+}
+
+function PlanReviewPoints({ points }: { points: IntegrityWarning[] }) {
+  const structural = points.filter(({ source }) => source === "structural");
+  const professional = points.filter(({ source }) => source === "model");
+
+  return (
+    <section className="plan-review-points">
+      <p className="eyebrow">Review before use</p>
+      <h3>Points for educator professional judgement</h3>
+      <p>
+        These are design checks and suggestions, not failures, verified
+        findings or capability-assurance decisions.
+      </p>
+      <div>
+        {structural.length > 0 ? (
+          <PlanReviewGroup label="Structural checks" points={structural} />
+        ) : null}
+        {professional.length > 0 ? (
+          <PlanReviewGroup
+            label="Professional review suggestions"
+            points={professional}
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function PlanReviewGroup({
+  label,
+  points,
+}: {
+  label: string;
+  points: IntegrityWarning[];
+}) {
+  return (
+    <div>
+      <strong>{label}</strong>
+      <ul>
+        {points.map((point) => (
+          <li key={`${point.source}-${point.code}-${point.message}`}>
+            {point.message}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

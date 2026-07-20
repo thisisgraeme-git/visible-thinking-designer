@@ -74,7 +74,10 @@ test("the output contract enforces bounded, selective moments", () => {
       assert.ok(moment.conditions.length >= 1);
       assert.ok(moment.conditions.length <= 3);
       assert.ok(moment.feedbackLoop.length > 0);
-      assert.ok(moment.workloadFit.length > 0);
+      assert.ok(moment.feedbackUptake.length > 0);
+      assert.ok(moment.workload.estimatedTime.length > 0);
+      assert.ok(moment.evidencePurposes.length >= 1);
+      assert.ok(moment.evidenceModes.length >= 1);
       assert.ok(moment.weakOrMissingEvidence.length > 0);
       assert.ok(moment.exampleInContext.length > 0);
     }
@@ -91,8 +94,8 @@ test("the versioned prompts preserve research and safety invariants", () => {
     "AI detection",
     "chain-of-thought",
     "untrusted data",
-    "three to five",
-    "workload fit",
+    "three to\\s+five",
+    "recording burden",
   ]) {
     assert.match(combined, new RegExp(invariant, "i"));
   }

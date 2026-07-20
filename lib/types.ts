@@ -59,6 +59,58 @@ export type AiPosition =
   | "help-me-decide"
   | "not-relevant";
 
+export type EvidencePurpose =
+  | "learning"
+  | "diagnosis"
+  | "feedback"
+  | "judgement"
+  | "verification";
+
+export type EvidenceMode =
+  | "produced-artefact"
+  | "tutor-observation"
+  | "practical-performance"
+  | "live-explanation"
+  | "professional-conversation"
+  | "changed-context-application"
+  | "feedback-led-revision";
+
+export type JourneyPhase =
+  | "before-task"
+  | "early-attempt"
+  | "during-task"
+  | "after-feedback"
+  | "changed-context";
+
+export type EvidenceRetention =
+  | "observe-and-use"
+  | "brief-note"
+  | "formal-record";
+
+export type ActivityRelationship = "embedded" | "replaces" | "adds";
+
+export type IntegrityWarningSource = "structural" | "model";
+
+export type IntegrityWarningCode =
+  | "chronology"
+  | "duplication"
+  | "text-heavy-evidence"
+  | "verification-gap"
+  | "feedback-uptake"
+  | "capture-burden"
+  | "support-boundary"
+  | "changed-condition"
+  | "fragmentation"
+  | "support-overreach"
+  | "capability-drift";
+
+export interface IntegrityWarning {
+  code: IntegrityWarningCode;
+  message: string;
+  momentIds: string[];
+  source: IntegrityWarningSource;
+}
+
 export interface ClarificationQuestion {
   id: string;
   question: string;
@@ -88,15 +140,33 @@ export interface VisibleThinkingMoment {
   title: string;
   timing: string;
   purpose: string;
+  journeyPhase: JourneyPhase;
   conditions: VisibleCondition[];
+  evidencePurposes: EvidencePurpose[];
+  evidenceModes: EvidenceMode[];
   learnerAction: string;
   tutorMove: string;
+  supportBoundary: {
+    tutorMay: string;
+    learnerResponsibility: string;
+  };
   visibleEvidence: string;
   weakOrMissingEvidence: string;
   feedbackLoop: string;
+  feedbackUptake: string;
   exampleInContext: string;
   aiPosition: AiPosition;
-  workloadFit: string;
+  retention: {
+    level: EvidenceRetention;
+    note: string;
+  };
+  workload: {
+    estimatedTime: string;
+    frequency: string;
+    recordingBurden: string;
+    activityRelationship: ActivityRelationship;
+  };
+  workloadFit?: string;
   caution?: string;
   source: "model" | "tutor";
 }
@@ -172,7 +242,15 @@ export interface VisibleThinkingProject {
       from: string;
       toward: string;
     };
+    evidencePatternRationale?: string;
     feedbackPattern?: string;
+    changedCondition?: {
+      momentId: string;
+      changes: string;
+      remainsConstant: string;
+      rationale: string;
+    };
+    integrityWarnings?: IntegrityWarning[];
     implementationNotes: string[];
     cautions: string[];
     useTomorrowSummary?: string;
@@ -196,7 +274,15 @@ export interface MomentsOutput {
     from: string;
     toward: string;
   };
+  evidencePatternRationale: string;
   feedbackPattern: string;
+  changedCondition: {
+    momentId: string;
+    changes: string;
+    remainsConstant: string;
+    rationale: string;
+  };
+  integrityWarnings: IntegrityWarning[];
   moments: VisibleThinkingMoment[];
   implementationNotes: string[];
   cautions: string[];

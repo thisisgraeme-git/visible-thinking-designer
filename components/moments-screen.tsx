@@ -5,8 +5,29 @@ import { AppShell } from "./app-shell";
 import { ModelStatus } from "./model-status";
 import { requestMoments } from "@/lib/model-client";
 import { updateGenerationStage } from "@/lib/model-state";
+import {
+  activityRelationshipLabels,
+  activityRelationships,
+  aiPositionLabels,
+  aiPositions,
+  evidenceModeLabels,
+  evidenceModes,
+  evidencePurposeLabels,
+  evidencePurposes,
+  journeyPhaseLabels,
+  journeyPhases,
+  retentionLabels,
+  retentionLevels,
+} from "@/lib/evidence-options";
+import {
+  assessPlanIntegrity,
+  combineIntegrityWarnings,
+} from "@/lib/plan-integrity";
 import { loadProject, saveProject } from "@/lib/storage";
 import type {
+  EvidenceMode,
+  EvidencePurpose,
+  IntegrityWarning,
   VisibleCondition,
   VisibleThinkingMoment,
   VisibleThinkingProject,
@@ -54,7 +75,10 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
         moments: result.data.moments,
         plan: {
           evidenceShift: result.data.evidenceShift,
+          evidencePatternRationale: result.data.evidencePatternRationale,
           feedbackPattern: result.data.feedbackPattern,
+          changedCondition: result.data.changedCondition,
+          integrityWarnings: result.data.integrityWarnings,
           implementationNotes: result.data.implementationNotes,
           cautions: result.data.cautions,
           useTomorrowSummary: result.data.useTomorrowSummary,
@@ -101,6 +125,14 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
   const momentsStatus = project.generation?.moments.status;
   const momentsBlocked =
     momentsStatus === "loading" || momentsStatus === "failed";
+  const reviewPoints = combineIntegrityWarnings(
+    project.plan.integrityWarnings,
+    assessPlanIntegrity(
+      project.task,
+      project.moments,
+      project.plan.changedCondition,
+    ),
+  );
 
   const useLocalDraft = () => {
     const updated = saveProject(
@@ -138,7 +170,12 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
   };
 
   const addManualMoment = () => {
-    if (project.moments.some((item) => item.source === "tutor")) return;
+    if (
+      project.moments.length >= 5 ||
+      project.moments.some((item) => item.source === "tutor")
+    ) {
+      return;
+    }
     setProject({
       ...project,
       moments: [
@@ -148,20 +185,40 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           title: "Tutor-added moment",
           timing: "Choose a consequential point in the task",
           purpose: "Describe why this moment matters.",
+          journeyPhase: "during-task",
           conditions: ["question"],
+          evidencePurposes: ["learning"],
+          evidenceModes: ["tutor-observation"],
           learnerAction: "Describe what the learner will do.",
           tutorMove: "Describe what the tutor will ask, notice or introduce.",
+          supportBoundary: {
+            tutorMay:
+              "Describe the concise prompt or cue the tutor may provide.",
+            learnerResponsibility:
+              "Describe the action or judgement that remains the learner’s responsibility.",
+          },
           visibleEvidence: "Describe what useful evidence could become visible.",
           weakOrMissingEvidence:
             "Describe what weak or missing evidence might look like.",
           feedbackLoop:
-            "Describe how feedback will change the learner’s next action.",
+            "Describe the feedback the learner receives or interprets.",
+          feedbackUptake:
+            "Describe what the learner changes, confirms or applies next.",
           exampleInContext:
             "Add one concise example showing how this moment could look in the task.",
           aiPosition: project.task.considerLearnerAi
             ? project.task.defaultAiPosition
             : "not-relevant",
-          workloadFit: "Review the workload fit.",
+          retention: {
+            level: "observe-and-use",
+            note: "Use the evidence in the moment; no additional record is planned.",
+          },
+          workload: {
+            estimatedTime: "Approximate time not yet specified",
+            frequency: "Once at the selected point",
+            recordingBurden: "No additional record planned",
+            activityRelationship: "embedded",
+          },
           source: "tutor",
         },
       ],
@@ -169,8 +226,37 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
   };
 
   const continueToPlan = () => {
-    const updated = saveProject({ ...project, status: "planned" });
+    const updated = saveProject({
+      ...project,
+      status: "planned",
+      plan: {
+        ...project.plan,
+        integrityWarnings: reviewPoints,
+      },
+    });
     window.location.href = `/design/${updated.id}/plan`;
+  };
+
+  const updateChangedCondition = (
+    key: "momentId" | "changes" | "remainsConstant" | "rationale",
+    value: string,
+  ) => {
+    const applyMoment =
+      project.moments.find((moment) => moment.conditions.includes("apply")) ??
+      project.moments.at(-1);
+    const current = project.plan.changedCondition ?? {
+      momentId: applyMoment?.id ?? "",
+      changes: "",
+      remainsConstant: "",
+      rationale: "",
+    };
+    setProject({
+      ...project,
+      plan: {
+        ...project.plan,
+        changedCondition: { ...current, [key]: value },
+      },
+    });
   };
 
   return (
@@ -223,6 +309,8 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
             isLast={index === project.moments.length - 1}
             key={item.id}
             moment={item}
+            taskAiPosition={project.task.defaultAiPosition}
+            taskConsidersAi={project.task.considerLearnerAi}
             onMove={(direction) => moveMoment(index, direction)}
             onRemove={() => removeMoment(item.id)}
             onUpdate={(key, value) => updateMoment(item.id, key, value)}
@@ -230,7 +318,8 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
         ))}
       </div>
 
-      {!project.moments.some((item) => item.source === "tutor") ? (
+      {project.moments.length < 5 &&
+      !project.moments.some((item) => item.source === "tutor") ? (
         <button
           className="add-moment"
           onClick={addManualMoment}
@@ -240,6 +329,65 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           Add one tutor-designed moment
         </button>
       ) : null}
+
+      <details className="pattern-details">
+        <summary>Evidence pattern details</summary>
+        <div className="pattern-details-body">
+          <MomentField
+            label="Why these moments work together"
+            onChange={(value) =>
+              setProject({
+                ...project,
+                plan: {
+                  ...project.plan,
+                  evidencePatternRationale: value,
+                },
+              })
+            }
+            value={project.plan.evidencePatternRationale ?? ""}
+          />
+          <fieldset className="changed-condition-editor">
+            <legend>One changed condition</legend>
+            <label>
+              <span>Apply moment</span>
+              <select
+                onChange={(event) =>
+                  updateChangedCondition("momentId", event.target.value)
+                }
+                value={project.plan.changedCondition?.momentId ?? ""}
+              >
+                <option value="">Choose an Apply moment</option>
+                {project.moments
+                  .filter((moment) => moment.conditions.includes("apply"))
+                  .map((moment) => (
+                    <option key={moment.id} value={moment.id}>
+                      {moment.title}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <MomentField
+              label="What changes"
+              onChange={(value) => updateChangedCondition("changes", value)}
+              value={project.plan.changedCondition?.changes ?? ""}
+            />
+            <MomentField
+              label="What remains constant"
+              onChange={(value) =>
+                updateChangedCondition("remainsConstant", value)
+              }
+              value={project.plan.changedCondition?.remainsConstant ?? ""}
+            />
+            <MomentField
+              label="Why this helps reveal capability"
+              onChange={(value) => updateChangedCondition("rationale", value)}
+              value={project.plan.changedCondition?.rationale ?? ""}
+            />
+          </fieldset>
+        </div>
+      </details>
+
+      <ReviewPoints points={reviewPoints} />
 
       <div className="action-row">
         <a
@@ -268,6 +416,8 @@ function MomentCard({
   isFirst,
   isLast,
   canRemove,
+  taskConsidersAi,
+  taskAiPosition,
   onUpdate,
   onMove,
   onRemove,
@@ -277,6 +427,8 @@ function MomentCard({
   isFirst: boolean;
   isLast: boolean;
   canRemove: boolean;
+  taskConsidersAi: boolean;
+  taskAiPosition: VisibleThinkingProject["task"]["defaultAiPosition"];
   onUpdate: (
     key: keyof VisibleThinkingMoment,
     value: VisibleThinkingMoment[keyof VisibleThinkingMoment],
@@ -336,6 +488,15 @@ function MomentCard({
         {moment.source === "tutor" ? <em>Tutor added</em> : null}
       </div>
 
+      <div className="evidence-summary-chips" aria-label="Evidence purposes and modes">
+        {moment.evidencePurposes.map((purpose) => (
+          <span key={purpose}>{evidencePurposeLabels[purpose]}</span>
+        ))}
+        {moment.evidenceModes.map((mode) => (
+          <em key={mode}>{evidenceModeLabels[mode]}</em>
+        ))}
+      </div>
+
       <div className="moment-grid">
         <MomentField
           label="Learner action"
@@ -361,16 +522,204 @@ function MomentCard({
 
       <div className="moment-footer">
         <MomentField
-          label="Feedback loop"
+          label="Feedback"
           onChange={(value) => onUpdate("feedbackLoop", value)}
           value={moment.feedbackLoop}
         />
         <MomentField
-          label="Workload fit"
-          onChange={(value) => onUpdate("workloadFit", value)}
-          value={moment.workloadFit}
+          label="What the learner changes next"
+          onChange={(value) => onUpdate("feedbackUptake", value)}
+          value={moment.feedbackUptake}
         />
       </div>
+
+      <details className="evidence-details">
+        <summary>Evidence details</summary>
+        <div className="evidence-details-body">
+          <MomentField
+            label="Why this moment matters"
+            onChange={(value) => onUpdate("purpose", value)}
+            value={moment.purpose}
+          />
+
+          <label>
+            <span>Journey phase</span>
+            <select
+              onChange={(event) =>
+                onUpdate(
+                  "journeyPhase",
+                  event.target.value as VisibleThinkingMoment["journeyPhase"],
+                )
+              }
+              value={moment.journeyPhase}
+            >
+              {journeyPhases.map((phase) => (
+                <option key={phase} value={phase}>
+                  {journeyPhaseLabels[phase]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <EvidenceChoices
+            label="Evidence purposes"
+            labels={evidencePurposeLabels}
+            onChange={(value) => onUpdate("evidencePurposes", value)}
+            options={evidencePurposes}
+            selected={moment.evidencePurposes}
+          />
+          <EvidenceChoices
+            label="Evidence modes"
+            labels={evidenceModeLabels}
+            onChange={(value) => onUpdate("evidenceModes", value)}
+            options={evidenceModes}
+            selected={moment.evidenceModes}
+          />
+
+          <div className="evidence-details-grid">
+            <MomentField
+              label="What the tutor may prompt or cue"
+              onChange={(value) =>
+                onUpdate("supportBoundary", {
+                  ...moment.supportBoundary,
+                  tutorMay: value,
+                })
+              }
+              value={moment.supportBoundary.tutorMay}
+            />
+            <MomentField
+              label="What remains the learner’s responsibility"
+              onChange={(value) =>
+                onUpdate("supportBoundary", {
+                  ...moment.supportBoundary,
+                  learnerResponsibility: value,
+                })
+              }
+              value={moment.supportBoundary.learnerResponsibility}
+            />
+          </div>
+
+          {taskConsidersAi ? (
+            <label>
+              <span>AI position for this moment</span>
+              <select
+                onChange={(event) =>
+                  onUpdate(
+                    "aiPosition",
+                    event.target.value as VisibleThinkingMoment["aiPosition"],
+                  )
+                }
+                value={moment.aiPosition}
+              >
+                {aiPositions
+                  .filter(
+                    (position) =>
+                      position !== "not-considered" &&
+                      position !== "not-relevant",
+                  )
+                  .map((position) => (
+                    <option key={position} value={position}>
+                      {aiPositionLabels[position]}
+                      {position === taskAiPosition ? " — task default" : ""}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          ) : null}
+
+          <div className="evidence-details-grid">
+            <label>
+              <span>Visibility and retention</span>
+              <select
+                onChange={(event) =>
+                  onUpdate("retention", {
+                    ...moment.retention,
+                    level: event.target
+                      .value as VisibleThinkingMoment["retention"]["level"],
+                  })
+                }
+                value={moment.retention.level}
+              >
+                {retentionLevels.map((level) => (
+                  <option key={level} value={level}>
+                    {retentionLabels[level]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <MomentField
+              label="What is noted or retained"
+              onChange={(value) =>
+                onUpdate("retention", { ...moment.retention, note: value })
+              }
+              value={moment.retention.note}
+            />
+          </div>
+
+          <fieldset className="workload-editor">
+            <legend>Concrete workload fit</legend>
+            <div className="evidence-details-grid">
+              <TextField
+                label="Approximate time"
+                onChange={(value) =>
+                  onUpdate("workload", {
+                    ...moment.workload,
+                    estimatedTime: value,
+                  })
+                }
+                value={moment.workload.estimatedTime}
+              />
+              <TextField
+                label="Frequency"
+                onChange={(value) =>
+                  onUpdate("workload", {
+                    ...moment.workload,
+                    frequency: value,
+                  })
+                }
+                value={moment.workload.frequency}
+              />
+              <TextField
+                label="Recording burden"
+                onChange={(value) =>
+                  onUpdate("workload", {
+                    ...moment.workload,
+                    recordingBurden: value,
+                  })
+                }
+                value={moment.workload.recordingBurden}
+              />
+              <label>
+                <span>Relationship to existing activity</span>
+                <select
+                  onChange={(event) =>
+                    onUpdate("workload", {
+                      ...moment.workload,
+                      activityRelationship: event.target
+                        .value as VisibleThinkingMoment["workload"]["activityRelationship"],
+                    })
+                  }
+                  value={moment.workload.activityRelationship}
+                >
+                  {activityRelationships.map((relationship) => (
+                    <option key={relationship} value={relationship}>
+                      {activityRelationshipLabels[relationship]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          {moment.caution ? (
+            <MomentField
+              label="Moment caution"
+              onChange={(value) => onUpdate("caution", value)}
+              value={moment.caution}
+            />
+          ) : null}
+        </div>
+      </details>
 
       <details className="moment-example">
         <summary>Show an example in context</summary>
@@ -405,5 +754,114 @@ function MomentField({
         value={value}
       />
     </label>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      />
+    </label>
+  );
+}
+
+function EvidenceChoices<T extends EvidencePurpose | EvidenceMode>({
+  label,
+  labels,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  labels: Record<T, string>;
+  options: T[];
+  selected: T[];
+  onChange: (value: T[]) => void;
+}) {
+  const toggle = (option: T) =>
+    onChange(
+      selected.includes(option)
+        ? selected.filter((item) => item !== option)
+        : [...selected, option],
+    );
+
+  return (
+    <fieldset className="evidence-choice-field">
+      <legend>{label}</legend>
+      <div className="evidence-choice-grid">
+        {options.map((option) => (
+          <label className="chip-choice" key={option}>
+            <input
+              checked={selected.includes(option)}
+              onChange={() => toggle(option)}
+              type="checkbox"
+            />
+            <span>{labels[option]}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function ReviewPoints({ points }: { points: IntegrityWarning[] }) {
+  if (points.length === 0) return null;
+  const structural = points.filter(({ source }) => source === "structural");
+  const professional = points.filter(({ source }) => source === "model");
+
+  return (
+    <aside className="review-points" aria-label="Points to review">
+      <p className="eyebrow">Points to review</p>
+      <h3>Use these prompts with professional judgement</h3>
+      <p>
+        These are design checks and suggestions, not failures or verified
+        findings.
+      </p>
+      {structural.length > 0 ? (
+        <ReviewPointGroup
+          label="Structural checks"
+          points={structural}
+        />
+      ) : null}
+      {professional.length > 0 ? (
+        <ReviewPointGroup
+          label="Professional review suggestions"
+          points={professional}
+        />
+      ) : null}
+    </aside>
+  );
+}
+
+function ReviewPointGroup({
+  label,
+  points,
+}: {
+  label: string;
+  points: IntegrityWarning[];
+}) {
+  return (
+    <div>
+      <strong>{label}</strong>
+      <ul>
+        {points.map((point) => (
+          <li key={`${point.source}-${point.code}-${point.message}`}>
+            {point.message}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

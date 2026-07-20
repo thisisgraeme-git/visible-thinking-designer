@@ -689,6 +689,8 @@ h4 {
 .moment-stack,
 .feedback-ribbon,
 .add-moment,
+.pattern-details,
+.review-points,
 .plan-toolbar,
 .plan-document {
   margin-left: auto;
@@ -1159,6 +1161,32 @@ select:hover {
   margin: 12px 0 22px 56px;
 }
 
+.evidence-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -12px 0 22px 56px;
+}
+
+.evidence-summary-chips span,
+.evidence-summary-chips em {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-style: normal;
+  padding: 4px 9px;
+}
+
+.evidence-summary-chips span {
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 750;
+}
+
+.evidence-summary-chips em {
+  color: var(--muted);
+}
+
 .condition-chips em {
   background: var(--amber-soft);
   color: var(--amber);
@@ -1180,6 +1208,124 @@ select:hover {
 .moment-card textarea {
   background: #fbfbf8;
   font-size: 0.78rem;
+}
+
+.evidence-details,
+.pattern-details {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.evidence-details summary,
+.pattern-details summary {
+  color: var(--teal);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 750;
+}
+
+.evidence-details-body,
+.pattern-details-body {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.evidence-details-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.evidence-choice-field,
+.workload-editor,
+.changed-condition-editor {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  margin: 0;
+  padding: 16px;
+}
+
+.evidence-choice-field legend,
+.workload-editor legend,
+.changed-condition-editor legend {
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 780;
+  padding: 0 6px;
+}
+
+.evidence-choice-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.evidence-choice-grid .chip-choice {
+  border-radius: 9px;
+}
+
+.evidence-choice-grid .chip-choice span {
+  font-size: 0.9375rem;
+}
+
+.changed-condition-editor {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.changed-condition-editor > label:first-of-type,
+.changed-condition-editor > label:last-of-type {
+  grid-column: 1 / -1;
+}
+
+.pattern-details {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  margin-top: 18px;
+  padding: 20px 24px;
+}
+
+.review-points {
+  background: var(--amber-soft);
+  border: 1px solid rgba(200, 122, 42, 0.25);
+  border-radius: var(--radius-card);
+  margin-top: 18px;
+  padding: 24px;
+}
+
+.review-points h3 {
+  font-size: 1.35rem;
+  margin-bottom: 8px;
+}
+
+.review-points > p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.review-points > div + div {
+  border-top: 1px solid rgba(200, 122, 42, 0.22);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.review-points strong {
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+
+.review-points ul {
+  margin: 7px 0 0;
+  padding-left: 20px;
+}
+
+.review-points li {
+  font-size: 0.9375rem;
+  margin-bottom: 6px;
 }
 
 .add-moment {
@@ -1322,7 +1468,10 @@ select:hover {
 }
 
 .plan-capability,
+.pattern-rationale,
 .plan-moments,
+.plan-changed-condition,
+.plan-review-points,
 .plan-notes,
 .plan-boundaries {
   padding: 38px 46px;
@@ -1369,6 +1518,42 @@ select:hover {
   align-self: center;
   color: var(--teal);
   font-size: 1.4rem;
+}
+
+.pattern-rationale {
+  border-bottom: 1px solid var(--line);
+}
+
+.pattern-rationale > p:not(.eyebrow) {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  max-width: 820px;
+}
+
+.pattern-feedback {
+  align-items: flex-start;
+  background: var(--blue-soft);
+  border-radius: var(--radius-small);
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+}
+
+.pattern-feedback > span {
+  color: var(--blue);
+  font-size: 1.3rem;
+}
+
+.pattern-feedback p {
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.pattern-feedback strong {
+  color: var(--blue);
+  display: block;
 }
 
 .plan-section-heading {
@@ -1422,14 +1607,97 @@ select:hover {
   margin: 0;
 }
 
+.plan-moment-purpose {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  margin-bottom: 14px;
+}
+
+.plan-evidence-chips {
+  margin: 0 0 20px;
+}
+
 .plan-feedback {
   align-items: start;
   background: var(--blue-soft);
   border-radius: var(--radius-small);
-  display: flex;
+  display: grid;
   gap: 12px;
+  grid-template-columns: auto 1fr 1fr;
   margin-top: 20px;
   padding: 14px;
+}
+
+.plan-evidence-details {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 20px;
+  padding-top: 20px;
+}
+
+.plan-evidence-details span,
+.plan-changed-condition span {
+  color: var(--teal);
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.plan-evidence-details p,
+.plan-changed-condition p {
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.plan-changed-condition {
+  background: var(--teal-soft);
+  border-top: 1px solid var(--line);
+}
+
+.plan-changed-condition h3,
+.plan-review-points h3 {
+  font-size: 1.45rem;
+  margin-bottom: 20px;
+}
+
+.plan-changed-condition > div {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.plan-review-points {
+  background: var(--amber-soft);
+  border-top: 1px solid rgba(200, 122, 42, 0.25);
+}
+
+.plan-review-points > p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.plan-review-points > div {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.plan-review-points strong {
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+
+.plan-review-points ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.plan-review-points li {
+  font-size: 0.9375rem;
+  margin-bottom: 7px;
 }
 
 .plan-feedback > span {
@@ -1820,7 +2088,13 @@ label > em,
   .choice-grid.three-up,
   .moment-grid,
   .moment-footer,
+  .evidence-details-grid,
+  .evidence-choice-grid,
+  .changed-condition-editor,
   .plan-moment-grid,
+  .plan-evidence-details,
+  .plan-changed-condition > div,
+  .plan-review-points > div,
   .plan-notes {
     grid-template-columns: 1fr;
   }
@@ -1861,6 +2135,15 @@ label > em,
     margin-left: 46px;
   }
 
+  .evidence-summary-chips {
+    margin-left: 46px;
+  }
+
+  .changed-condition-editor > label:first-of-type,
+  .changed-condition-editor > label:last-of-type {
+    grid-column: auto;
+  }
+
   .plan-cover {
     grid-template-columns: 1fr;
     padding: 30px 24px;
@@ -1873,7 +2156,10 @@ label > em,
   }
 
   .plan-capability,
+  .pattern-rationale,
   .plan-moments,
+  .plan-changed-condition,
+  .plan-review-points,
   .plan-notes,
   .plan-boundaries,
   .evidence-shift {
@@ -1890,6 +2176,14 @@ label > em,
 
   .plan-moment {
     grid-template-columns: 1fr;
+  }
+
+  .plan-feedback {
+    grid-template-columns: auto 1fr;
+  }
+
+  .plan-feedback > p:last-child {
+    grid-column: 2;
   }
 
   .plan-moment-heading,

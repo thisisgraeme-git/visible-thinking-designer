@@ -47,21 +47,76 @@ export function enforceMomentsBoundaries<T extends MomentsOutput>(
         })),
   } as T;
 
-  if (!task.safetyCritical) return bounded;
-
-  const hasPerformanceGroundedEvidence = bounded.moments.some((moment) =>
-    /direct(?:ly)? observ|observed (?:task )?performance|physical (?:action|performance|demonstration)|task[- ]result|workplace outcome|equipment (?:response|signal)|real[- ]?time (?:action|performance)|live demonstration/i.test(
-      moment.visibleEvidence,
-    ),
+  const linkedMoment = bounded.moments.find(
+    (moment) =>
+      moment.id === bounded.changedCondition.momentId &&
+      moment.conditions.includes("apply"),
   );
-  if (!hasPerformanceGroundedEvidence && bounded.moments.length > 0) {
+  if (!linkedMoment && bounded.moments.length > 0) {
+    const existingApply = bounded.moments.find((moment) =>
+      moment.conditions.includes("apply"),
+    );
+    const target = existingApply ?? bounded.moments.at(-1)!;
     bounded = {
       ...bounded,
-      moments: bounded.moments.map((moment, index) =>
-        index === 0
+      changedCondition: {
+        ...bounded.changedCondition,
+        momentId: target.id,
+      },
+      moments: existingApply
+        ? bounded.moments
+        : bounded.moments.map((moment) =>
+            moment.id === target.id
+              ? {
+                  ...moment,
+                  conditions: [
+                    ...moment.conditions.filter(
+                      (condition) => condition !== "apply",
+                    ),
+                    "apply" as const,
+                  ].slice(-3) as typeof moment.conditions,
+                }
+              : moment,
+          ),
+    };
+  }
+
+  if (!task.safetyCritical) return bounded;
+
+  const directEvidencePattern =
+    /direct(?:ly)? observ|observed (?:task )?performance|physical (?:action|performance|demonstration)|task[- ]result|workplace outcome|equipment (?:response|signal)|real[- ]?time (?:action|performance)|live demonstration/i;
+  const hasPerformanceMode = bounded.moments.some((moment) =>
+    moment.evidenceModes.some((mode) =>
+      ["tutor-observation", "practical-performance"].includes(mode),
+    ),
+  );
+  const hasPerformanceDescription = bounded.moments.some((moment) =>
+    directEvidencePattern.test(moment.visibleEvidence),
+  );
+  if (
+    (!hasPerformanceMode || !hasPerformanceDescription) &&
+    bounded.moments.length > 0
+  ) {
+    const target =
+      bounded.moments.find((moment) => moment.conditions.includes("apply")) ??
+      bounded.moments.at(-1)!;
+    bounded = {
+      ...bounded,
+      moments: bounded.moments.map((moment) =>
+        moment.id === target.id
           ? {
               ...moment,
-              visibleEvidence: `${moment.visibleEvidence} Include directly observed task performance or a task result.`,
+              visibleEvidence: hasPerformanceDescription
+                ? moment.visibleEvidence
+                : `${moment.visibleEvidence} Include directly observed task performance or a task result.`,
+              evidenceModes: hasPerformanceMode
+                ? moment.evidenceModes
+                : [
+                    ...moment.evidenceModes.filter(
+                      (mode) => mode !== "tutor-observation",
+                    ),
+                    "tutor-observation" as const,
+                  ].slice(-3),
             }
           : moment,
       ),

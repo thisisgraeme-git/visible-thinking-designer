@@ -17,6 +17,44 @@ export const aiPositionSchema = z.enum([
   "not-relevant",
 ]);
 
+export const evidencePurposeSchema = z.enum([
+  "learning",
+  "diagnosis",
+  "feedback",
+  "judgement",
+  "verification",
+]);
+
+export const evidenceModeSchema = z.enum([
+  "produced-artefact",
+  "tutor-observation",
+  "practical-performance",
+  "live-explanation",
+  "professional-conversation",
+  "changed-context-application",
+  "feedback-led-revision",
+]);
+
+export const journeyPhaseSchema = z.enum([
+  "before-task",
+  "early-attempt",
+  "during-task",
+  "after-feedback",
+  "changed-context",
+]);
+
+export const evidenceRetentionSchema = z.enum([
+  "observe-and-use",
+  "brief-note",
+  "formal-record",
+]);
+
+export const activityRelationshipSchema = z.enum([
+  "embedded",
+  "replaces",
+  "adds",
+]);
+
 export const taskSchema = z
   .object({
     title: z.string().max(120),
@@ -157,15 +195,38 @@ export const momentSchema = z
     title: z.string().min(3).max(160),
     timing: z.string().min(5).max(280),
     purpose: z.string().min(10).max(500),
+    journeyPhase: journeyPhaseSchema,
     conditions: z.array(visibleConditionSchema).min(1).max(3),
+    evidencePurposes: z.array(evidencePurposeSchema).min(1).max(3),
+    evidenceModes: z.array(evidenceModeSchema).min(1).max(3),
     learnerAction: z.string().min(10).max(700),
     tutorMove: z.string().min(10).max(700),
+    supportBoundary: z
+      .object({
+        tutorMay: z.string().min(5).max(500),
+        learnerResponsibility: z.string().min(5).max(500),
+      })
+      .strict(),
     visibleEvidence: z.string().min(10).max(700),
     weakOrMissingEvidence: z.string().min(10).max(700),
     feedbackLoop: z.string().min(10).max(700),
+    feedbackUptake: z.string().min(10).max(700),
     exampleInContext: z.string().min(10).max(500),
     aiPosition: aiPositionSchema,
-    workloadFit: z.string().min(5).max(350),
+    retention: z
+      .object({
+        level: evidenceRetentionSchema,
+        note: z.string().min(3).max(400),
+      })
+      .strict(),
+    workload: z
+      .object({
+        estimatedTime: z.string().min(2).max(120),
+        frequency: z.string().min(3).max(180),
+        recordingBurden: z.string().min(3).max(220),
+        activityRelationship: activityRelationshipSchema,
+      })
+      .strict(),
     caution: z.string().max(400),
     source: z.literal("model"),
   })
@@ -186,7 +247,36 @@ export const momentsOutputSchema = z
         toward: z.string().min(5).max(600),
       })
       .strict(),
+    evidencePatternRationale: z.string().min(20).max(900),
     feedbackPattern: z.string().min(10).max(700),
+    changedCondition: z
+      .object({
+        momentId: z.string().min(2).max(80),
+        changes: z.string().min(5).max(400),
+        remainsConstant: z.string().min(5).max(400),
+        rationale: z.string().min(10).max(500),
+      })
+      .strict(),
+    integrityWarnings: z
+      .array(
+        z
+          .object({
+            code: z.enum([
+              "fragmentation",
+              "support-overreach",
+              "capability-drift",
+              "capture-burden",
+              "changed-condition",
+              "verification-gap",
+              "text-heavy-evidence",
+            ]),
+            message: z.string().min(10).max(450),
+            momentIds: z.array(z.string().min(2).max(80)).max(5),
+            source: z.literal("model"),
+          })
+          .strict(),
+      )
+      .max(5),
     moments: z.array(momentSchema).min(3).max(5),
     implementationNotes: z.array(z.string().min(5).max(450)).min(1).max(5),
     cautions: z.array(z.string().min(5).max(450)).min(1).max(5),

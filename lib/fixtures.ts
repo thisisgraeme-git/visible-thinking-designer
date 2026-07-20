@@ -1,9 +1,20 @@
 import type {
-  AiPosition,
   ScenarioFixture,
   VisibleThinkingMoment,
   VisibleThinkingProject,
 } from "./types";
+
+type MomentOptions = Pick<
+  VisibleThinkingMoment,
+  | "journeyPhase"
+  | "evidencePurposes"
+  | "evidenceModes"
+  | "supportBoundary"
+  | "feedbackUptake"
+  | "retention"
+  | "workload"
+> &
+  Partial<Pick<VisibleThinkingMoment, "aiPosition" | "caution">>;
 
 const moment = (
   id: string,
@@ -16,9 +27,7 @@ const moment = (
   visibleEvidence: string,
   weakOrMissingEvidence: string,
   feedbackLoop: string,
-  workloadFit: string,
-  aiPosition: AiPosition = "not-relevant",
-  caution?: string,
+  options: MomentOptions,
 ): VisibleThinkingMoment => ({
   id,
   title,
@@ -31,9 +40,8 @@ const moment = (
   weakOrMissingEvidence,
   feedbackLoop,
   exampleInContext: `For example, ${learnerAction.charAt(0).toLowerCase()}${learnerAction.slice(1)}`,
-  aiPosition,
-  workloadFit,
-  caution,
+  ...options,
+  aiPosition: options.aiPosition ?? "not-relevant",
   source: "model",
 });
 
@@ -153,7 +161,29 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A workable sequence connected to equipment, customer and workflow constraints.",
           "A memorised procedure with no response to the actual service context.",
           "The tutor offers one cue only if the learner misses a safety or workflow constraint; the learner then restates the plan.",
-          "Low — integrated into the service start.",
+          {
+            journeyPhase: "before-task",
+            evidencePurposes: ["learning", "diagnosis"],
+            evidenceModes: ["live-explanation", "tutor-observation"],
+            supportBoundary: {
+              tutorMay:
+                "Offer one cue only when a safety or workflow constraint is missed.",
+              learnerResponsibility:
+                "Set and explain the service sequence and anticipated pressure point.",
+            },
+            feedbackUptake:
+              "The learner restates the plan and changes the sequence before starting if the cue reveals a constraint.",
+            retention: {
+              level: "observe-and-use",
+              note: "Use the response in the moment; no separate record is needed.",
+            },
+            workload: {
+              estimatedTime: "About 20 seconds",
+              frequency: "Once at the start of the selected service attempt",
+              recordingBurden: "None",
+              activityRelationship: "embedded",
+            },
+          },
         ),
         moment(
           "fw-m2",
@@ -166,7 +196,33 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A decision tied to observable café-quality signals and trade-offs.",
           "A quality claim based only on appearance or tutor reassurance.",
           "The espresso, milk and tutor question provide feedback; the learner acts on it before service.",
-          "Low — replaces a generic ‘looks good’ exchange.",
+          {
+            journeyPhase: "during-task",
+            evidencePurposes: ["feedback", "judgement", "verification"],
+            evidenceModes: [
+              "practical-performance",
+              "tutor-observation",
+              "live-explanation",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Ask one adaptive question about which product signal matters most.",
+              learnerResponsibility:
+                "Judge quality and decide whether to continue, adjust or remake.",
+            },
+            feedbackUptake:
+              "The learner adjusts or remakes before serving and names the signal that changed the decision.",
+            retention: {
+              level: "brief-note",
+              note: "Note only the consequential quality decision if this is a checkpoint.",
+            },
+            workload: {
+              estimatedTime: "Embedded; about 15–30 seconds",
+              frequency: "Once in the selected service attempt",
+              recordingBurden: "One brief tutor note at most",
+              activityRelationship: "replaces",
+            },
+          },
         ),
         moment(
           "fw-m3",
@@ -179,7 +235,33 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "Adaptation that protects the required standard rather than simply repeating the previous routine.",
           "Repeating the same sequence when conditions now require a different decision.",
           "The result of the changed order becomes feedback; the learner names one change for the next attempt.",
-          "Medium — use once, not on every order.",
+          {
+            journeyPhase: "changed-context",
+            evidencePurposes: ["learning", "judgement", "verification"],
+            evidenceModes: [
+              "changed-context-application",
+              "practical-performance",
+              "tutor-observation",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Introduce the single changed order condition and observe the response.",
+              learnerResponsibility:
+                "Adapt the workflow while protecting the same café-quality and safety standards.",
+            },
+            feedbackUptake:
+              "The learner identifies one adaptation to carry into the next service attempt.",
+            retention: {
+              level: "observe-and-use",
+              note: "Use the changed performance in the tutor’s judgement without extra capture.",
+            },
+            workload: {
+              estimatedTime: "Embedded in one follow-up order",
+              frequency: "Once, not on every order",
+              recordingBurden: "None beyond normal observation",
+              activityRelationship: "embedded",
+            },
+          },
         ),
       ],
       plan: {
@@ -188,8 +270,20 @@ export const scenarioFixtures: ScenarioFixture[] = [
           toward:
             "Finished beverage plus selected evidence of planning, checking and adaptation",
         },
+        evidencePatternRationale:
+          "The pattern connects a brief plan, direct observation of product-grounded judgement and one changed order. Together they reveal preparation, performance and adaptation without interrupting service or documenting every action.",
         feedbackPattern:
           "Product and tutor feedback are used immediately, then tested in the next changed order.",
+        changedCondition: {
+          momentId: "fw-m3",
+          changes:
+            "The follow-up order uses a different milk while service pressure remains authentic.",
+          remainsConstant:
+            "The café-quality standard, equipment, safety expectations and learner responsibility remain constant.",
+          rationale:
+            "A single product variation shows whether the learner can adapt workflow and technical decisions rather than repeat a memorised routine.",
+        },
+        integrityWarnings: [],
         implementationNotes: [
           "Use the three moments during one authentic service window.",
           "Keep tutor prompts short enough that the task remains real.",
@@ -324,8 +418,33 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "Interpretation grounded in the client’s words, tone and relevant context.",
           "A generic apology followed by an assumed solution.",
           "The client confirms, corrects or complicates the interpretation; the learner adapts the next response.",
-          "Medium — one brief pause in the role-play.",
-          "available-with-boundaries",
+          {
+            journeyPhase: "early-attempt",
+            evidencePurposes: ["learning", "diagnosis", "feedback"],
+            evidenceModes: [
+              "professional-conversation",
+              "live-explanation",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Pause once and ask what the learner heard beneath the initial request.",
+              learnerResponsibility:
+                "Interpret the concern, ask the clarifying question and choose the next response.",
+            },
+            feedbackUptake:
+              "The learner adjusts the next response when the client confirms, corrects or complicates the interpretation.",
+            retention: {
+              level: "observe-and-use",
+              note: "Use the interpretation to guide the role-play; do not retain a separate artefact.",
+            },
+            workload: {
+              estimatedTime: "About 1 minute",
+              frequency: "Once near the start of the role-play",
+              recordingBurden: "None",
+              activityRelationship: "embedded",
+            },
+            aiPosition: "available-with-boundaries",
+          },
         ),
         moment(
           "dc-m2",
@@ -338,8 +457,33 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A proportionate action linked to policy, client need and role authority.",
           "Quoting policy without connecting it to the situation.",
           "Policy and tutor follow-up provide feedback; the learner revises the proposed response if needed.",
-          "Low — uses the normal policy check.",
-          "available-with-boundaries",
+          {
+            journeyPhase: "during-task",
+            evidencePurposes: ["feedback", "judgement"],
+            evidenceModes: [
+              "professional-conversation",
+              "live-explanation",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Prompt the learner to locate the policy boundary without naming the correct action.",
+              learnerResponsibility:
+                "Interpret the policy and choose whether to act, offer options or escalate.",
+            },
+            feedbackUptake:
+              "The learner revises the proposed response when the policy check exposes a constraint.",
+            retention: {
+              level: "observe-and-use",
+              note: "The live decision is used within the role-play; no extra record is required.",
+            },
+            workload: {
+              estimatedTime: "Embedded; about 30–60 seconds",
+              frequency: "Once before a resolution is offered",
+              recordingBurden: "None",
+              activityRelationship: "replaces",
+            },
+            aiPosition: "available-with-boundaries",
+          },
         ),
         moment(
           "dc-m3",
@@ -352,8 +496,34 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A changed response that addresses the new signal without abandoning policy or respect.",
           "Repeating the original script more forcefully.",
           "The client response shows whether the adaptation worked; the learner records what changed and why.",
-          "Medium — one planned branch per role-play.",
-          "not-relevant",
+          {
+            journeyPhase: "changed-context",
+            evidencePurposes: ["feedback", "judgement", "verification"],
+            evidenceModes: [
+              "professional-conversation",
+              "changed-context-application",
+              "feedback-led-revision",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Introduce one realistic refusal and continue the client role.",
+              learnerResponsibility:
+                "Adapt the response while preserving policy, respect and scope of authority.",
+            },
+            feedbackUptake:
+              "The learner changes the response and briefly records what changed and why.",
+            retention: {
+              level: "brief-note",
+              note: "Retain only the normal follow-up record with one sentence about the adaptation.",
+            },
+            workload: {
+              estimatedTime: "About 2–3 minutes",
+              frequency: "One planned branch per role-play",
+              recordingBurden: "One sentence in the existing follow-up record",
+              activityRelationship: "embedded",
+            },
+            aiPosition: "not-relevant",
+          },
         ),
       ],
       plan: {
@@ -362,8 +532,20 @@ export const scenarioFixtures: ScenarioFixture[] = [
           toward:
             "Selected evidence of interpretation, policy-grounded judgement and live adaptation",
         },
+        evidencePatternRationale:
+          "The pattern follows interpretation, policy-grounded judgement and live adaptation. Conversation and changed-client evidence complement the written follow-up without turning relational performance into a scripted checklist.",
         feedbackPattern:
           "Client response, policy and tutor follow-up each change the learner’s next decision.",
+        changedCondition: {
+          momentId: "dc-m3",
+          changes:
+            "The client rejects the learner’s first appropriate option.",
+          remainsConstant:
+            "The original concern, service policy, role authority and expectation of respectful communication remain constant.",
+          rationale:
+            "One realistic refusal reveals whether the learner can adapt relationally without abandoning the professional boundary.",
+        },
+        integrityWarnings: [],
         implementationNotes: [
           "Use fictional client information only.",
           "Brief the role-player on one planned change, not a fixed script.",
@@ -500,9 +682,32 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A revisable frame that will guide evidence selection and comparison.",
           "A broad topic statement with no decision or contextual criteria.",
           "Tutor or peer feedback challenges one criterion; the learner keeps, replaces or refines it with a reason.",
-          "Low — a short note that replaces unfocused pre-writing.",
-          "deliberately-examined",
-          "AI may suggest options, but the learner must select and justify the frame.",
+          {
+            journeyPhase: "before-task",
+            evidencePurposes: ["learning", "diagnosis", "feedback"],
+            evidenceModes: ["produced-artefact", "feedback-led-revision"],
+            supportBoundary: {
+              tutorMay:
+                "Challenge one criterion and offer access to the agreed comparison frame.",
+              learnerResponsibility:
+                "Select and justify the context, decision and comparison criteria.",
+            },
+            feedbackUptake:
+              "The learner keeps, replaces or refines one criterion and records the reason in the framing note.",
+            retention: {
+              level: "brief-note",
+              note: "Keep the short framing note with the developing report.",
+            },
+            workload: {
+              estimatedTime: "About 5–8 minutes",
+              frequency: "Once before drafting",
+              recordingBurden: "A 100-word note that replaces unfocused pre-writing",
+              activityRelationship: "replaces",
+            },
+            aiPosition: "deliberately-examined",
+            caution:
+              "AI may suggest options, but the learner must select and justify the frame.",
+          },
         ),
         moment(
           "sr-m2",
@@ -515,9 +720,35 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A source decision tied to the report’s frame, claim and evidence standard.",
           "A credibility label with no connection to how the source will be used.",
           "The follow-up exposes a gap or confirms the choice; the learner updates the evidence set.",
-          "Medium — sample two decisions, not the entire research trail.",
-          "deliberately-examined",
-          "AI output must be checked against the source itself.",
+          {
+            journeyPhase: "during-task",
+            evidencePurposes: ["diagnosis", "judgement", "verification"],
+            evidenceModes: [
+              "live-explanation",
+              "professional-conversation",
+              "produced-artefact",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Ask one adaptive question about the source’s relevance to a claim.",
+              learnerResponsibility:
+                "Defend the inclusion and rejection decisions against disciplinary criteria and the source itself.",
+            },
+            feedbackUptake:
+              "The learner confirms the choice or updates the evidence set and related claim.",
+            retention: {
+              level: "brief-note",
+              note: "Note the sampled decision only; do not retain the full research trail.",
+            },
+            workload: {
+              estimatedTime: "About 3–5 minutes",
+              frequency: "Sample one included and one rejected source",
+              recordingBurden: "One brief source-decision note",
+              activityRelationship: "embedded",
+            },
+            aiPosition: "deliberately-examined",
+            caution: "AI output must be checked against the source itself.",
+          },
         ),
         moment(
           "sr-m3",
@@ -530,8 +761,34 @@ export const scenarioFixtures: ScenarioFixture[] = [
           "A revised recommendation that reweights evidence and acknowledges trade-offs.",
           "Surface editing that leaves the underlying recommendation unchanged.",
           "The changed constraint and critique become feedback; the learner explains the consequential revision.",
-          "Medium — one changed condition and one annotation.",
-          "available-with-boundaries",
+          {
+            journeyPhase: "changed-context",
+            evidencePurposes: ["feedback", "judgement", "verification"],
+            evidenceModes: [
+              "changed-context-application",
+              "feedback-led-revision",
+              "live-explanation",
+            ],
+            supportBoundary: {
+              tutorMay:
+                "Introduce one organisational constraint and ask what it changes in the recommendation.",
+              learnerResponsibility:
+                "Reweight the evidence, revise the recommendation and explain the consequential change.",
+            },
+            feedbackUptake:
+              "The learner revises the recommendation and annotates the evidence or trade-off that changed.",
+            retention: {
+              level: "formal-record",
+              note: "Retain the revised recommendation as part of the existing report submission.",
+            },
+            workload: {
+              estimatedTime: "About 8–12 minutes",
+              frequency: "Once after targeted critique",
+              recordingBurden: "One annotation within the existing report",
+              activityRelationship: "embedded",
+            },
+            aiPosition: "available-with-boundaries",
+          },
         ),
       ],
       plan: {
@@ -540,8 +797,20 @@ export const scenarioFixtures: ScenarioFixture[] = [
           toward:
             "Report plus selected evidence of framing, source judgement and consequential revision",
         },
+        evidencePatternRationale:
+          "The pattern keeps the report central while connecting a developmental frame, an adaptive professional conversation about source judgement and one consequential revision. The modes converge without requiring a complete process log.",
         feedbackPattern:
           "Feedback challenges the frame, evidence choice and recommendation; the learner’s response is visible in changed decisions.",
+        changedCondition: {
+          momentId: "sr-m3",
+          changes:
+            "The available implementation budget is reduced for the recommendation.",
+          remainsConstant:
+            "The workplace context, wellbeing purpose, source set and disciplinary evidence criteria remain constant.",
+          rationale:
+            "A single budget change reveals whether the learner can reweight evidence and trade-offs rather than merely restate the original recommendation.",
+        },
+        integrityWarnings: [],
         implementationNotes: [
           "Keep process evidence to three short, high-value moments.",
           "Use the same disciplinary criteria in teaching and tutor follow-up.",
