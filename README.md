@@ -110,6 +110,20 @@ pnpm test:live
 
 No task body is logged by the application. Model requests set `store: false`.
 
+## How Codex and GPT-5.6 were used
+
+Codex translated the four governing source documents into the staged product
+architecture, implemented the local application, maintained the gate
+boundaries, diagnosed failures against exact test artefacts and built the
+repeatable schema, safeguard, workflow and production-build checks.
+
+GPT-5.6 is used inside the product for three bounded server-side design calls:
+clarification/source reading, the editable design focus and the proposed
+visible-thinking moments. Every call uses a versioned prompt and validated
+structured output. The tutor-edited project remains authoritative, and the
+final plan is rendered deterministically without a separate prose-generation
+call.
+
 ## Canonical demonstration scenarios
 
 1. **Flat white under pressure** — practical performance and product-grounded checking.
