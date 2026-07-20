@@ -566,3 +566,78 @@ persistence/export remains outside scope and was not started.
 - No capability-assurance, automated-assessment, scoring, confidence or
   AI-detection claim was introduced.
 - Stage 2.5B remains open for owner review. Stage 3 has not begun.
+
+## Final build sprint — Gate 2.5B closure and Stage 3 submission candidate
+
+### Gate
+
+Graeme closed Gate 2.5B after owner validation on 21 July 2026 and authorised
+the bounded final sprint. Stage 3 was audited before implementation. Existing
+diagnosis editing, moment editing/removal/reordering, manual moments,
+browser-local persistence, recent plans, duplication, task-edit regeneration
+safeguards, print styling, deterministic rendering and failure recovery were
+retained.
+
+### Smallest confirmed gap set
+
+- Constrained Step 5 in the landing-page circular model to the requested
+  three-line label: “Apply / under changed / conditions”. Adjusted only its
+  width and position; the diagram and landing design were not redesigned.
+- Changed design-focus and moment edits to save immediately to the existing
+  versioned browser-local project. Reordering, removal, manual moments,
+  evidence-pattern rationale and changed-condition edits now survive refresh
+  before the final-plan transition.
+- Added privacy-bounded Markdown and JSON plan exports plus one-click plan copy.
+  Exports reflect tutor-edited structured state and omit the internal source
+  digest and attachment metadata.
+- Added **Start another task** from the final plan. It opens a clean intake while
+  preserving the completed project. Existing **Duplicate** continues to create
+  an independent saved copy.
+- Kept browser print-to-PDF as the PDF path; no custom document renderer or new
+  persistence architecture was introduced.
+
+### Final validation
+
+- Passed 62 static, schema, safeguard, privacy, compatibility, export and
+  workflow tests with no skips, including the exact uppercase
+  `IMG_2098.JPG`.
+- Passed TypeScript type checking, lint and the production build.
+- Completed a live text-only journey for supervised espresso preparation:
+  clarification, design focus, four moments and final plan. Confirmed a
+  tutor-edited capability summary and reordered moment persisted across refresh
+  and reopening.
+- Completed a live image-attached journey using the exact supplied photograph,
+  in-app rotation and the existing clarification call. The final plan retained
+  the task summary and processed context while stating that the attachment was
+  not retained.
+- Confirmed copy output contained the edited moment and feedback uptake;
+  Markdown and JSON downloads reported successful filenames; JSON/Markdown
+  contract tests confirmed internal source-digest omission.
+- Confirmed safe duplication created a new project and **Start another task**
+  preserved the prior plan.
+- Confirmed Step 5 used exactly two note lines below “Apply” and did not overlap
+  the central question at 1,440, 1,024, 900 or 768 px. The existing circular
+  model is intentionally hidden at the 640 px mobile breakpoint.
+- Confirmed the final-plan toolbar remained visible at 640 px with no horizontal
+  overflow.
+
+### Stage 3 gate result
+
+Stage 3 passes. Refreshing and reopening preserves the design, tutor changes
+are authoritative, and copy, Markdown, JSON and print/PDF outputs render from
+the edited structured state. No account, database, durable attachment store,
+shareable plan URL or new product concept was added.
+
+### Judge-testing path
+
+1. Start from a blank task or one canonical scenario.
+2. Enter the required task identity and optionally attach one supported source.
+3. Confirm/correct the target task and complete or skip clarification.
+4. Edit and confirm the design focus.
+5. Edit, remove or reorder moments and inspect collapsed evidence details.
+6. Build the plan and use copy, Markdown, JSON or print/PDF output.
+7. Return home, reopen the plan, duplicate it or start another task.
+8. For recovery, retry a failed request or continue without an attachment when
+   the written task is sufficient.
+
+The submission candidate remains owner-only pending final code-lock approval.

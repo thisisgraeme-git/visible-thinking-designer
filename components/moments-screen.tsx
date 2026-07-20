@@ -147,28 +147,30 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
     id: string,
     key: keyof VisibleThinkingMoment,
     value: VisibleThinkingMoment[keyof VisibleThinkingMoment],
-  ) =>
-    setProject({
+  ) => {
+    const updated = saveProject({
       ...project,
       moments: project.moments.map((item) =>
         item.id === id ? { ...item, [key]: value } : item,
       ),
     });
+    setProject(updated);
+  };
 
   const moveMoment = (index: number, direction: -1 | 1) => {
     const target = index + direction;
     if (target < 0 || target >= project.moments.length) return;
     const moments = [...project.moments];
     [moments[index], moments[target]] = [moments[target], moments[index]];
-    setProject({ ...project, moments });
+    setProject(saveProject({ ...project, moments }));
   };
 
   const removeMoment = (id: string) => {
     if (project.moments.length <= 3) return;
-    setProject({
+    setProject(saveProject({
       ...project,
       moments: project.moments.filter((item) => item.id !== id),
-    });
+    }));
   };
 
   const addManualMoment = () => {
@@ -178,7 +180,7 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
     ) {
       return;
     }
-    setProject({
+    setProject(saveProject({
       ...project,
       moments: [
         ...project.moments,
@@ -224,7 +226,7 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           source: "tutor",
         },
       ],
-    });
+    }));
   };
 
   const continueToPlan = () => {
@@ -252,13 +254,13 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
       remainsConstant: "",
       rationale: "",
     };
-    setProject({
+    setProject(saveProject({
       ...project,
       plan: {
         ...project.plan,
         changedCondition: { ...current, [key]: value },
       },
-    });
+    }));
   };
 
   return (
@@ -339,13 +341,13 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           <MomentField
             label="Why these moments work together"
             onChange={(value) =>
-              setProject({
+              setProject(saveProject({
                 ...project,
                 plan: {
                   ...project.plan,
                   evidencePatternRationale: value,
                 },
-              })
+              }))
             }
             value={project.plan.evidencePatternRationale ?? ""}
           />

@@ -15,6 +15,11 @@ import { createGenerationState } from "@/lib/model-state";
 import { duplicateProject, loadProject, saveProject } from "@/lib/storage";
 import { getTaskSummary } from "@/lib/task-summary";
 import { isLegacyUntitledTitle } from "@/lib/task-editing";
+import {
+  buildPlanJson,
+  buildPlanMarkdown,
+  planFilename,
+} from "@/lib/plan-export";
 import type {
   IntegrityWarning,
   VisibleThinkingProject,
@@ -22,6 +27,7 @@ import type {
 
 export function PlanScreen({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<VisibleThinkingProject>();
+  const [exportStatus, setExportStatus] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -79,6 +85,29 @@ export function PlanScreen({ projectId }: { projectId: string }) {
     window.location.href = `/design/${ready.id}/diagnose`;
   };
 
+  const download = (content: string, filename: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    setExportStatus(`${filename} downloaded.`);
+  };
+
+  const copyPlan = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        buildPlanMarkdown(project, reviewPoints),
+      );
+      setExportStatus("Plan copied.");
+    } catch {
+      setExportStatus(
+        "Copy was unavailable. Download the Markdown plan instead.",
+      );
+    }
+  };
+
   return (
     <AppShell
       eyebrow="Tutor-editable output"
@@ -101,6 +130,35 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           <button className="toolbar-button" onClick={duplicate} type="button">
             Duplicate
           </button>
+          <button className="toolbar-button" onClick={copyPlan} type="button">
+            Copy plan
+          </button>
+          <button
+            className="toolbar-button"
+            onClick={() =>
+              download(
+                buildPlanMarkdown(project, reviewPoints),
+                planFilename(project.task.title, "md"),
+                "text/markdown;charset=utf-8",
+              )
+            }
+            type="button"
+          >
+            Download Markdown
+          </button>
+          <button
+            className="toolbar-button"
+            onClick={() =>
+              download(
+                buildPlanJson(project, reviewPoints),
+                planFilename(project.task.title, "json"),
+                "application/json;charset=utf-8",
+              )
+            }
+            type="button"
+          >
+            Download JSON
+          </button>
           <button
             className="toolbar-button"
             onClick={() => window.print()}
@@ -110,6 +168,12 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           </button>
         </div>
       </div>
+
+      {exportStatus ? (
+        <p aria-live="polite" className="export-status no-print" role="status">
+          {exportStatus}
+        </p>
+      ) : null}
 
       {project.sourceAttachment?.processed ? (
         <p className="attachment-retention-note no-print">
@@ -342,6 +406,9 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         >
           Edit moments
         </a>
+        <Link className="button secondary" href="/design/new">
+          Start another task
+        </Link>
         <Link className="button primary" href="/">
           Finish and return home <span aria-hidden="true">→</span>
         </Link>

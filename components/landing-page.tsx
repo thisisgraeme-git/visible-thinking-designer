@@ -13,7 +13,7 @@ const conditionNotes = [
   ["Check", "grounded in the discipline"],
   ["Explain judgement", "tested through follow-up"],
   ["Apply", "under changed conditions"],
-];
+] as const;
 
 export function LandingPage() {
   const [recent, setRecent] = useState<VisibleThinkingProject[]>([]);
@@ -77,7 +77,15 @@ export function LandingPage() {
                 <span>{index + 1}</span>
                 <p>
                   <strong>{name}</strong>
-                  {note}
+                  {name === "Apply" ? (
+                    <>
+                      under changed
+                      <br />
+                      conditions
+                    </>
+                  ) : (
+                    note
+                  )}
                 </p>
               </div>
             ))}

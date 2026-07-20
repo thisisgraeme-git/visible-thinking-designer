@@ -6,9 +6,10 @@ It helps an educator redesign one real task so consequential learner thinking be
 
 ## Current build status
 
-Stage 1 and the Stage 2 GPT-5.6 core are complete. Gate 2 passed on 19 July
-2026 against all three live canonical scenarios using prompt version
-`vtd-2026-07-19.2`.
+Stages 1–3 are complete. Gate 2.5B closed after owner validation on 21 July
+2026, and the current owner-only deployment is the submission candidate for
+final code-lock review. The model contracts use prompt version
+`vtd-2026-07-20.6`.
 
 Included:
 
@@ -20,16 +21,18 @@ Included:
 - strict structured-output and request schemas;
 - loading, retry, typed failure and local-draft recovery states;
 - deterministic mock data retained as the safe fallback;
-- editable moments and plan;
+- optional PDF, DOC, DOCX, JPG, JPEG and PNG task-source intake;
+- editable design focus, moments and plan;
 - browser-local project persistence;
-- recent plans and duplication;
-- responsive and print-friendly presentation; and
+- recent plans, safe duplication and new-task restart;
+- copy, Markdown, JSON and print/PDF output;
+- responsive and print-friendly presentation;
 - contract checks for the three scenarios.
 
 Not included:
 
-- file upload;
 - accounts or external databases;
+- retained attachments or durable file storage;
 - learner records;
 - automated assessment; or
 - submission media.
@@ -101,6 +104,8 @@ pnpm test:live
 - typed fixture data in `lib/fixtures.ts`
 - versioned local browser storage in `lib/storage.ts`
 - deterministic plan rendering from confirmed structured state
+- browser-side image orientation and request-size preparation
+- Markdown and privacy-bounded JSON plan export
 - CSS tokens and print styling in `app/globals.css`
 
 No task body is logged by the application. Model requests set `store: false`.
@@ -135,15 +140,26 @@ The prototype:
 
 With `OPENAI_API_KEY` configured:
 
-1. Open the landing page.
-2. Select each of the three example scenarios in turn.
-3. Review or edit the task.
-4. Answer or skip the bounded clarification questions.
-5. Confirm the editable diagnosis.
-6. Edit or reorder the proposed visible-thinking moments.
-7. Open the final plan.
-8. Return home and reopen the locally saved plan.
+1. Open the landing page and choose **Start with your task** or one of the
+   three example scenarios.
+2. Enter a task name, a one-to-four-sentence core task description and the
+   intended capability. Optionally attach one supported task source.
+3. Confirm or correct **Our current understanding**, then answer or skip the
+   bounded clarification questions.
+4. Edit the design focus and choose **Use this design focus**.
+5. Edit, remove or reorder the three-to-five proposed moments. Open
+   **Evidence pattern details** to inspect the rationale and changed condition.
+6. Build the final plan. Confirm that tutor edits appear in the rendered plan.
+7. Use **Copy plan**, **Download Markdown**, **Download JSON** or
+   **Print / Save PDF**.
+8. Return home and reopen the locally saved plan. Use **Duplicate** to create a
+   safe copy or **Start another task** without replacing the existing plan.
+
+Supported source files: one PDF, DOC or DOCX up to 900 KB, or one JPG, JPEG or
+PNG up to 8 MB. Phone images are prepared below the hosted request ceiling;
+Rotate left/right is available before processing. Attachments are not retained.
 
 To test failure recovery, temporarily omit the API key or interrupt the model
 request. The task remains saved and the interface offers retry or continuation
-with the local draft.
+with the local draft. If attachment processing fails and the written task is
+sufficient, **Continue without using the attachment** remains available.

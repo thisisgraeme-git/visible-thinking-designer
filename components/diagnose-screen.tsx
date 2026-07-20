@@ -271,10 +271,10 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
     value: TaskDiagnosis[K],
   ) => {
     if (!project.diagnosis) return;
-    setProject({
+    setProject(saveProject({
       ...project,
       diagnosis: { ...project.diagnosis, [key]: value },
-    });
+    }));
   };
 
   const confirmDiagnosis = () => {

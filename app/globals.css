@@ -353,8 +353,12 @@ h4 {
 }
 
 .condition-5 {
-  left: 1%;
+  left: -7%;
   top: 40%;
+}
+
+.condition-5 p {
+  width: 112px;
 }
 
 .orbit-note {
@@ -1624,7 +1628,17 @@ input[aria-invalid="true"] {
 
 .plan-toolbar > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
+}
+
+.export-status {
+  color: var(--teal);
+  font-size: 0.9375rem;
+  margin: 0 auto 14px;
+  max-width: 980px;
+  text-align: right;
 }
 
 .toolbar-button {
@@ -2193,6 +2207,10 @@ label > em,
     margin: 0 auto;
   }
 
+  .condition-5 {
+    left: -1%;
+  }
+
   .example-grid,
   .recent-grid {
     grid-template-columns: 1fr;
@@ -2416,6 +2434,14 @@ label > em,
 
   .plan-toolbar {
     gap: 10px;
+  }
+
+  .plan-toolbar > div {
+    justify-content: flex-start;
+  }
+
+  .export-status {
+    text-align: left;
   }
 
   .file-drop,
