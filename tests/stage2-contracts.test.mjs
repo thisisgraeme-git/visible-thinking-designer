@@ -28,7 +28,7 @@ test("all three scenarios satisfy the Stage 2 request and output schemas", () =>
 
     assert.equal(
       clarifyOutputSchema.safeParse({
-        taskReflection: project.clarification.taskReflection,
+        taskSummary: project.clarification.taskSummary,
         questions: project.clarification.questions.map(
           ({ id, question, whyItMatters }) => ({
             id,

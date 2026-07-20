@@ -128,7 +128,7 @@ export const clarifyRequestSchema = z
 
 export const clarifyOutputSchema = z
   .object({
-    taskReflection: z.string().min(20).max(700),
+    taskSummary: z.string().min(20).max(500),
     questions: z
       .array(
         z
@@ -158,6 +158,7 @@ export const diagnoseRequestSchema = z
     task: taskSchema,
     clarification: z
       .object({
+        taskSummary: z.string().max(500).optional(),
         taskReflection: z.string().max(700).optional(),
         questions: z.array(clarificationQuestionSchema).max(3),
         completed: z.boolean(),

@@ -1,8 +1,58 @@
 import type {
+  ClarifyOutput,
   DiagnosisOutput,
   MomentsOutput,
   VisibleThinkingProject,
 } from "../types";
+
+const TARGET_TASK_QUESTION =
+  "Which specific learner task do you want to redesign?";
+
+export function enforceClarificationBoundaries<T extends ClarifyOutput>(
+  task: VisibleThinkingProject["task"],
+  output: T,
+): T {
+  if (!needsTargetTaskClarification(task.description)) return output;
+
+  const existing = output.questions.filter(
+    ({ question }) => question.trim() !== TARGET_TASK_QUESTION,
+  );
+  return {
+    ...output,
+    questions: [
+      {
+        id: "target-learner-task",
+        question: TARGET_TASK_QUESTION,
+        whyItMatters:
+          "A single learner task gives the design a clear capability, evidence journey and proportionate scope.",
+      },
+      ...existing,
+    ].slice(0, 3),
+  } as T;
+}
+
+export function needsTargetTaskClarification(description: string): boolean {
+  const text = description.trim();
+  const templateOrReference =
+    /\b(template|reference material|background reading|course outline|unit outline|assessment schedule|marking rubric|appendix|instructions for tutors|complete (?:the|this) (?:template|section))\b/i;
+  const incomplete =
+    /\b(tbc|to be confirmed|insert (?:task|activity|details)|placeholder|draft template)\b|\[(?:insert|complete|tbc|todo)[^\]]*\]|(?:…|\.\.\.)\s*$/i;
+  const numberedActivities =
+    text.match(
+      /\b(?:activity|task|exercise|scenario)\s*(?:#\s*)?(?:[1-9]|one|two|three|four)\b/gi,
+    ) ?? [];
+  const manyHeadings =
+    text.length > 2500 &&
+    (text.match(/(?:^|\n)\s*(?:#{1,3}\s+|[A-Z][A-Z ]{4,}:?)/g) ?? [])
+      .length >= 3;
+
+  return (
+    templateOrReference.test(text) ||
+    incomplete.test(text) ||
+    numberedActivities.length >= 2 ||
+    manyHeadings
+  );
+}
 
 export function enforceDiagnosisBoundaries<T extends DiagnosisOutput>(
   task: VisibleThinkingProject["task"],

@@ -90,7 +90,8 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
       const succeeded = saveProject({
         ...stageUpdated,
         clarification: {
-          taskReflection: result.data.taskReflection,
+          ...stageUpdated.clarification,
+          taskSummary: result.data.taskSummary,
           questions: result.data.questions.map((question) => ({
             ...question,
             skipped: false,
@@ -214,7 +215,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
       eyebrow={
         phase === "clarify"
           ? "Focused professional conversation"
-          : "Editable diagnosis"
+          : "Editable design focus"
       }
       projectTitle={project.task.title}
       stage={2}
@@ -251,7 +252,10 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           index={questionIndex}
           onAnswer={setAnswer}
           onCommit={commitQuestion}
-          reflection={project.clarification.taskReflection}
+          summary={
+            project.clarification.taskSummary ??
+            project.clarification.taskReflection
+          }
           total={questions.length}
         />
       ) : phase === "diagnose" &&
@@ -280,7 +284,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
             <DiagnosisSection
               accent="amber"
               items={project.diagnosis.invisibleThinking}
-              kicker="Primary diagnosis"
+              kicker="Primary design focus"
               title="Consequential thinking that remains invisible"
             />
 
@@ -360,7 +364,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
 }
 
 function ClarifyPhase({
-  reflection,
+  summary,
   currentQuestion,
   index,
   total,
@@ -368,7 +372,7 @@ function ClarifyPhase({
   onAnswer,
   onCommit,
 }: {
-  reflection?: string;
+  summary?: string;
   currentQuestion?: ClarificationQuestion;
   index: number;
   total: number;
@@ -380,7 +384,7 @@ function ClarifyPhase({
     return (
       <section className="reflection-card">
         <p className="eyebrow">No clarification needed</p>
-        <p>{reflection || "Your task has enough detail to diagnose directly."}</p>
+        <p>{summary || "Your task has enough detail to set a design focus."}</p>
       </section>
     );
   }
@@ -388,7 +392,7 @@ function ClarifyPhase({
     <div className="clarify-layout">
       <section className="reflection-card">
         <p className="eyebrow">Our current understanding</p>
-        <p>{reflection || "Your task has enough detail to begin the design."}</p>
+        <p>{summary || "Your task has enough detail to begin the design."}</p>
       </section>
       <section className="question-card">
         <div className="question-progress">
@@ -427,7 +431,7 @@ function ClarifyPhase({
             onClick={() => void onCommit(false)}
             type="button"
           >
-            {index === total - 1 ? "Review diagnosis" : "Next question"}{" "}
+            {index === total - 1 ? "Review design focus" : "Next question"}{" "}
             <span aria-hidden="true">→</span>
           </button>
         </div>

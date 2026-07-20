@@ -231,6 +231,8 @@ export interface VisibleThinkingProject {
     defaultAiPosition: AiPosition;
   };
   clarification: {
+    taskSummary?: string;
+    /** Legacy Stage 2/2.5A summary retained for browser-local draft compatibility. */
     taskReflection?: string;
     questions: ClarificationQuestion[];
     completed: boolean;
@@ -259,7 +261,7 @@ export interface VisibleThinkingProject {
 }
 
 export interface ClarifyOutput {
-  taskReflection: string;
+  taskSummary: string;
   questions: Array<{
     id: string;
     question: string;

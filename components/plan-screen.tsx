@@ -5,10 +5,6 @@ import Link from "next/link";
 import { AppShell } from "./app-shell";
 import {
   activityRelationshipLabels,
-  aiPositionLabels,
-  evidenceModeLabels,
-  evidencePurposeLabels,
-  journeyPhaseLabels,
   retentionLabels,
 } from "@/lib/evidence-options";
 import {
@@ -16,19 +12,11 @@ import {
   combineIntegrityWarnings,
 } from "@/lib/plan-integrity";
 import { duplicateProject, loadProject, saveProject } from "@/lib/storage";
+import { getTaskSummary } from "@/lib/task-summary";
 import type {
   IntegrityWarning,
-  VisibleCondition,
   VisibleThinkingProject,
 } from "@/lib/types";
-
-const conditionLabels: Record<VisibleCondition, string> = {
-  attempt: "Attempt",
-  question: "Question",
-  check: "Check",
-  "explain-judgement": "Explain judgement",
-  apply: "Apply",
-};
 
 export function PlanScreen({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<VisibleThinkingProject>();
@@ -106,7 +94,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           <div>
             <p className="eyebrow">Visible Thinking Plan · v0.1</p>
             <h2>{project.task.title}</h2>
-            <p>{project.task.description}</p>
+            <p>{getTaskSummary(project)}</p>
           </div>
           <div className="plan-status">
             <span>AI position</span>
@@ -129,38 +117,10 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           ) : null}
         </section>
 
-        <section className="evidence-shift">
-          <div>
-            <span>From</span>
-            <p>
-              {project.plan.evidenceShift?.from ||
-                project.task.currentEvidence ||
-                "Finished work alone"}
-            </p>
-          </div>
-          <i aria-hidden="true">→</i>
-          <div>
-            <span>Toward</span>
-            <p>
-              {project.plan.evidenceShift?.toward ||
-                "Selected evidence across the learning journey"}
-            </p>
-          </div>
-        </section>
-
         {project.plan.evidencePatternRationale ? (
           <section className="pattern-rationale">
             <p className="eyebrow">Why this evidence pattern works</p>
             <p>{project.plan.evidencePatternRationale}</p>
-            {project.plan.feedbackPattern ? (
-              <div className="pattern-feedback">
-                <span aria-hidden="true">↻</span>
-                <p>
-                  <strong>Feedback across the pattern</strong>
-                  {project.plan.feedbackPattern}
-                </p>
-              </div>
-            ) : null}
           </section>
         ) : null}
 
@@ -176,52 +136,24 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                 <div className="plan-moment-heading">
                   <div>
                     <h4>{moment.title}</h4>
-                    <p>
-                      {moment.timing} · {journeyPhaseLabels[moment.journeyPhase]}
-                    </p>
+                    <p>{moment.timing}</p>
                   </div>
-                  <div className="condition-chips">
-                    {moment.conditions.map((condition) => (
-                      <span key={condition}>
-                        {conditionLabels[condition]}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <p className="plan-moment-purpose">{moment.purpose}</p>
-                <div
-                  className="evidence-summary-chips plan-evidence-chips"
-                  aria-label="Evidence purposes and modes"
-                >
-                  {moment.evidencePurposes.map((purpose) => (
-                    <span key={purpose}>
-                      {evidencePurposeLabels[purpose]}
-                    </span>
-                  ))}
-                  {moment.evidenceModes.map((mode) => (
-                    <em key={mode}>{evidenceModeLabels[mode]}</em>
-                  ))}
                 </div>
                 <div className="plan-moment-grid">
-                  <PlanDetail label="Learner action" value={moment.learnerAction} />
+                  <PlanDetail
+                    label="Learner action"
+                    value={moment.learnerAction}
+                  />
                   <PlanDetail label="Tutor move" value={moment.tutorMove} />
                   <PlanDetail
-                    label="Useful evidence"
+                    label="Visible evidence"
                     value={moment.visibleEvidence}
-                  />
-                  <PlanDetail
-                    label="Weak or missing evidence"
-                    value={moment.weakOrMissingEvidence}
                   />
                 </div>
                 <div className="plan-feedback">
                   <span aria-hidden="true">↻</span>
                   <p>
-                    <strong>Feedback loop</strong>
-                    {moment.feedbackLoop}
-                  </p>
-                  <p>
-                    <strong>What the learner changes next</strong>
+                    <strong>Feedback uptake</strong>
                     {moment.feedbackUptake}
                   </p>
                 </div>
@@ -234,33 +166,18 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     label="Learner responsibility"
                     value={moment.supportBoundary.learnerResponsibility}
                   />
-                  <PlanDetail
-                    label="Visibility and retention"
-                    value={`${retentionLabels[moment.retention.level]} — ${
-                      moment.retention.note
-                    }`}
-                  />
-                  <PlanDetail
-                    label="Concrete workload"
-                    value={formatWorkload(moment)}
-                  />
-                  {project.task.considerLearnerAi ? (
+                  {moment.retention.level !== "observe-and-use" ? (
                     <PlanDetail
-                      label="AI position for this moment"
-                      value={aiPositionLabels[moment.aiPosition]}
+                      label="Retention"
+                      value={`${retentionLabels[moment.retention.level]} — ${
+                        moment.retention.note
+                      }`}
                     />
                   ) : null}
-                  {moment.caution ? (
-                    <PlanDetail label="Moment caution" value={moment.caution} />
-                  ) : null}
-                </div>
-                <details className="moment-example plan-moment-example no-print">
-                  <summary>Show an example in context</summary>
-                  <p>{moment.exampleInContext}</p>
-                </details>
-                <div className="print-only plan-example-print">
-                  <strong>Example in context</strong>
-                  <p>{moment.exampleInContext}</p>
+                  <PlanDetail
+                    label="Approximate workload"
+                    value={formatOperationalWorkload(moment)}
+                  />
                 </div>
               </div>
             </article>
@@ -367,13 +284,12 @@ function PlanDetail({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatWorkload(
+function formatOperationalWorkload(
   moment: VisibleThinkingProject["moments"][number],
 ): string {
   return [
     moment.workload.estimatedTime,
     moment.workload.frequency,
-    moment.workload.recordingBurden,
     activityRelationshipLabels[moment.workload.activityRelationship],
   ]
     .map((value) => value.trim().replace(/[.;]+$/, ""))

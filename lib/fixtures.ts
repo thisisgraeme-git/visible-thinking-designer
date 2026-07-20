@@ -80,6 +80,8 @@ export const scenarioFixtures: ScenarioFixture[] = [
         defaultAiPosition: "absent",
       },
       clarification: {
+        taskSummary:
+          "Learners prepare a flat white during authentic café service. The task develops safe workflow, technical control, sensory checking and adaptation under time pressure. The design keeps the finished drink central while making the learner’s planning, product-based judgement, response to feedback and changed-order decisions visible to the tutor.",
         taskReflection:
           "A practical service task where the finished drink matters, but the strongest evidence sits in how the learner sequences, checks and adapts.",
         questions: [
@@ -335,6 +337,8 @@ export const scenarioFixtures: ScenarioFixture[] = [
         defaultAiPosition: "available-with-boundaries",
       },
       clarification: {
+        taskSummary:
+          "Learners respond to a dissatisfied client in a realistic service conversation and complete an appropriate follow-up. The task develops listening, policy-grounded judgement, respectful communication and adaptation when the client rejects an initial option. The design makes key decisions visible without reducing relational practice to a script or personality judgement.",
         taskReflection:
           "A relational task where professional judgement is distributed across listening, policy checking, response selection and adaptation.",
         questions: [
@@ -592,6 +596,8 @@ export const scenarioFixtures: ScenarioFixture[] = [
         defaultAiPosition: "deliberately-examined",
       },
       clarification: {
+        taskSummary:
+          "Learners produce a short, evidence-informed workplace report that frames a wellbeing issue, judges sources, weighs practical trade-offs and recommends action. The design keeps the report central while revealing how the learner selects evidence, explains consequential decisions, uses feedback and adapts the recommendation when one implementation condition changes.",
         taskReflection:
           "A synthesis task where a polished report can hide framing, evidence selection, trade-offs and response to feedback.",
         questions: [

@@ -319,3 +319,71 @@ learner information or secrets.
 - No second model reviewer, score, confidence percentage, strength rating or
   assurance state was added.
 - This build stops at the Stage 2.5C owner review gate.
+
+## Stage 2.5C — Owner-review repair
+
+### Gate
+
+Authorised by Graeme on 20 July 2026 as a bounded Stage 2.5C repair. Stage 2.5B
+task-file intake and Stage 3 persistence/export remain outside scope and were
+not started.
+
+### What changed
+
+- Made plain, direct British/NZ English the default across the system,
+  clarification, design-focus and moments prompt contracts. Conceptual and
+  disciplinary depth still adapts to the task and qualification level.
+- Replaced remaining tutor-facing navigation references to diagnosis with
+  “design focus”, while retaining the separate learner-diagnosis safeguard.
+- Added a required `taskSummary` to the existing clarification output contract.
+  It is approximately 40–60 words, stored separately from the raw task, and
+  used on clarification and final-plan summary surfaces.
+- Added a conservative summary fallback for Stage 2.5A/C browser-local drafts
+  that have only the legacy `taskReflection` or no model summary.
+- Removed the raw task description from the final-plan hero.
+- Replaced the silent 4,000-character input cap with a clear, non-destructive
+  over-limit message. The full pasted text remains in the form until the tutor
+  shortens it.
+- Added a deterministic clarification boundary for template-like, reference,
+  multi-activity or incomplete input. It prioritises “Which specific learner
+  task do you want to redesign?” without adding a model call.
+- Compressed the final plan to learner action, tutor move, visible evidence,
+  feedback uptake, support boundary, approximate workload and justified
+  retention, plus the evidence-pattern rationale, one changed condition and
+  points to review.
+- Added four rotating, non-percentage generation messages for the evidence
+  pattern and working-plan transition.
+
+### GPT-5.6 use
+
+Prompt version `vtd-2026-07-20.5` retains the existing clarify, diagnose and
+moments endpoints. It asks for short fields, plain tutor-facing language and
+degree-appropriate conceptual depth without inflated academic phrasing. No
+review endpoint or additional model call was added.
+
+### Tested
+
+- Passed 38 static, schema, safeguard, compatibility, language, source-text,
+  renderer and wait-state tests.
+- Passed TypeScript type checking and lint.
+- Completed a live degree-scenario journey through clarification, editable
+  design focus, moment generation and the final plan.
+- Confirmed the live task summary was concise, direct and conceptually
+  appropriate for degree-level work.
+- Confirmed the final-plan hero used the task summary rather than raw source
+  text, and retained the operational evidence details requested for use.
+- Confirmed 4,037 pasted characters remained intact, the exact over-limit
+  message appeared, and progression stayed disabled until the input is within
+  the limit.
+- Confirmed the generation wait state appeared and resolved into four
+  consequential moments without a fabricated percentage.
+
+### Compatibility and boundary confirmation
+
+- The browser-local project schema and storage key remain `0.1`.
+  `clarification.taskReflection` remains readable as a legacy fallback.
+- No file upload, parser, task-file intake, database, account, external
+  persistence or new export mechanism was added.
+- No capability-assurance, automated-assessment, scoring or learner-record
+  claim was introduced.
+- This repair stops at the Stage 2.5C owner-review gate.

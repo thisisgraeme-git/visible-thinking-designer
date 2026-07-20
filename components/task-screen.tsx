@@ -6,6 +6,10 @@ import { AppShell } from "./app-shell";
 import { blankProject, projectFromFixture } from "@/lib/fixtures";
 import { createGenerationState } from "@/lib/model-state";
 import { saveProject } from "@/lib/storage";
+import {
+  getTaskDescriptionLimitMessage,
+  TASK_DESCRIPTION_MAX,
+} from "@/lib/task-input";
 import type {
   AiPosition,
   AssessmentStakes,
@@ -299,7 +303,11 @@ export function TaskScreen() {
 
   const canContinue =
     project.task.description.trim().length >= 30 &&
+    project.task.description.length <= TASK_DESCRIPTION_MAX &&
     project.task.intendedCapability.trim().length >= 15;
+  const descriptionLimitMessage = getTaskDescriptionLimitMessage(
+    project.task.description,
+  );
 
   const continueToDiagnosis = () => {
     const ready = saveProject({
@@ -360,13 +368,28 @@ export function TaskScreen() {
           <span>Describe the task</span>
           <small>What will the learner actually do?</small>
           <textarea
-            maxLength={4000}
+            aria-describedby={
+              descriptionLimitMessage ? "task-description-limit" : undefined
+            }
+            aria-invalid={descriptionLimitMessage ? true : undefined}
             onChange={(event) => updateTask("description", event.target.value)}
             placeholder="Paste the current instructions or describe the activity."
             rows={6}
             value={project.task.description}
           />
-          <em>{project.task.description.length} / 4000</em>
+          <em>
+            {project.task.description.length.toLocaleString("en-NZ")} /{" "}
+            {TASK_DESCRIPTION_MAX.toLocaleString("en-NZ")}
+          </em>
+          {descriptionLimitMessage ? (
+            <span
+              className="field-error"
+              id="task-description-limit"
+              role="alert"
+            >
+              {descriptionLimitMessage}
+            </span>
+          ) : null}
         </label>
 
         <div className="field-group">

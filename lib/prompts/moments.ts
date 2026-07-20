@@ -5,6 +5,10 @@ activity where possible; do not create extra learner artefacts merely to fill
 the structure. Explain briefly why the moments work together across the task
 journey.
 
+Use plain, direct language while preserving the conceptual and disciplinary
+depth appropriate to the task. Keep every generated field to one short sentence
+unless a little more explanation is needed for implementation.
+
 For each moment:
 - Use one to three selective Conditions; do not force all five.
 - Identify one to three relevant evidence purposes and modes. Do not require

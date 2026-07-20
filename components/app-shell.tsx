@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 const stages = [
   { number: 1, label: "Task" },
-  { number: 2, label: "Clarify & diagnose" },
+  { number: 2, label: "Clarify & design focus" },
   { number: 3, label: "Design moments" },
   { number: 4, label: "Plan" },
 ];

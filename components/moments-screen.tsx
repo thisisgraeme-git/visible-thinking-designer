@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "./app-shell";
 import { ModelStatus } from "./model-status";
+import { PLAN_GENERATION_MESSAGES } from "@/lib/generation-copy";
 import { requestMoments } from "@/lib/model-client";
 import { updateGenerationStage } from "@/lib/model-state";
 import {
@@ -270,6 +271,7 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
         <ModelStatus
           error={project.generation?.moments.error}
           label="Designing a small set of consequential moments…"
+          messages={PLAN_GENERATION_MESSAGES}
           onFallback={useLocalDraft}
           onRetry={() => void generateMoments(project)}
           status={momentsStatus}
@@ -394,7 +396,7 @@ export function MomentsScreen({ projectId }: { projectId: string }) {
           className="button secondary"
           href={`/design/${project.id}/diagnose`}
         >
-          Back to diagnosis
+          Back to design focus
         </a>
         <button
           className="button primary"

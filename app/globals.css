@@ -836,6 +836,16 @@ label > em {
   text-align: right;
 }
 
+.field-error {
+  color: var(--danger);
+  display: block;
+  font-size: 0.9375rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
 input,
 textarea,
 select {
@@ -856,6 +866,11 @@ input:hover,
 textarea:hover,
 select:hover {
   border-color: var(--line-strong);
+}
+
+textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(159, 63, 53, 0.12);
 }
 
 .choice-field {

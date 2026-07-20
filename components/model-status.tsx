@@ -1,25 +1,51 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getGenerationMessage } from "@/lib/generation-copy";
 import type { GenerationError, GenerationStatus } from "@/lib/types";
+
+const NO_PROGRESS_MESSAGES: readonly string[] = [];
 
 export function ModelStatus({
   status,
   label,
+  messages = NO_PROGRESS_MESSAGES,
   error,
   onRetry,
   onFallback,
 }: {
   status: GenerationStatus;
   label: string;
+  messages?: readonly string[];
   error?: GenerationError;
   onRetry?: () => void;
   onFallback?: () => void;
 }) {
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (status !== "loading" || messages.length < 2) return;
+    const interval = window.setInterval(
+      () => setMessageIndex((index) => (index + 1) % messages.length),
+      2200,
+    );
+    return () => window.clearInterval(interval);
+  }, [messages, status]);
+
   if (status === "loading") {
+    const activeLabel =
+      getGenerationMessage(status, messageIndex, label, messages) ?? label;
     return (
-      <section className="model-status loading" role="status">
+      <section
+        aria-atomic="true"
+        aria-live="polite"
+        className="model-status loading"
+        role="status"
+      >
         <span className="model-pulse" aria-hidden="true" />
         <div>
           <p className="eyebrow">GPT-5.6 design reasoning</p>
-          <h2>{label}</h2>
+          <h2>{activeLabel}</h2>
           <p>Your project is already saved in this browser.</p>
         </div>
       </section>

@@ -3,6 +3,7 @@ import {
   clarifyOutputSchema,
   clarifyRequestSchema,
 } from "@/lib/model-schemas";
+import { enforceClarificationBoundaries } from "@/lib/server/boundaries";
 import { invalidRequestResponse, modelResponse } from "@/lib/server/http";
 import { runStructuredModel } from "@/lib/server/openai";
 
@@ -17,5 +18,11 @@ export async function POST(request: Request) {
     parsed.data,
     clarifyOutputSchema,
   );
+  if (result.ok) {
+    result.data = enforceClarificationBoundaries(
+      parsed.data.task,
+      result.data,
+    );
+  }
   return modelResponse(result);
 }
