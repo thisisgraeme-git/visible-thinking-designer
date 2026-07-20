@@ -116,6 +116,11 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           Processed task context from {project.sourceAttachment.filename} is
           available. The attachment itself was not retained.
         </p>
+      ) : project.sourceAttachment?.notUsedForDesign ? (
+        <p className="attachment-retention-note no-print">
+          {project.sourceAttachment.filename} was not processed or used in this
+          design. The original attachment was not retained with this draft.
+        </p>
       ) : null}
 
       {(!project.task.title.trim() ||

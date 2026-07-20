@@ -477,3 +477,92 @@ internal source digest. `store: false` remains set on Responses API calls.
   confidence claim was introduced.
 - This implementation stops at the Stage 2.5B owner-review gate. Stage 3 has
   not begun.
+
+## Stage 2.5B — Owner-review repair: image processing and recovery
+
+### Gate
+
+Authorised by Graeme on 20 July 2026 as a bounded Stage 2.5B repair. Stage 3
+persistence/export remains outside scope and was not started.
+
+### Exact failure diagnosis
+
+- The supplied uppercase `IMG_2098.JPG` passed filename normalisation, MIME,
+  JPEG-signature and application metadata validation.
+- The current Downloads original is a full-resolution 3,591,989-byte phone
+  JPEG. A request-size probe found that the local and hosted route architecture
+  rejects a multipart body at approximately 1 MiB before the clarification
+  route runs. The original therefore received a plain-text HTTP 413 before
+  OpenAI or structured-output parsing.
+- The unchanged original succeeded when passed directly through the existing
+  OpenAI `input_image` data-URL contract. It returned a valid typed
+  clarification result and source digest. Image construction, Base64 encoding
+  and schema parsing were therefore not the cause.
+- The client expected JSON for every response. It treated the platform’s
+  plain-text 413 as a generic processing failure.
+- Retry retained and resent the original file, but the unchanged body exceeded
+  the same limit again.
+- The local-draft fallback entered clarification with no questions and no
+  forward action. Its statement that designing could continue was therefore a
+  genuine dead end.
+
+### What changed
+
+- Phone images are now decoded and prepared in the browser before upload.
+  Browser decoding honours image orientation metadata when available; the
+  tutor can also use Rotate left or Rotate right when the pixels remain
+  sideways.
+- Rotation is applied to the processing copy sent to clarification—not only to
+  its preview. The source image remains in session memory for Retry or Replace.
+- Image processing uses a maximum 2,048-pixel dimension and staged JPEG
+  encoding, with a hard 850 KB transmission ceiling. No OCR or general image
+  editor was introduced.
+- The intake now shows a compact preview, Rotate left, Rotate right, Replace and
+  Remove.
+- Source images may be selected up to 8 MB because they are prepared before
+  transmission. PDF, DOC and DOCX intake is now capped conservatively at
+  900 KB so documents are rejected clearly before the hosted body ceiling.
+- Non-JSON 413 responses now produce a typed, actionable file-size error.
+- When the tutor’s required written task fields are sufficient, attachment
+  failure offers a prominent “Continue without using the attachment” action.
+  It stores a conservative task summary, omits the source digest, states that
+  the attachment was not processed and proceeds through the existing
+  design-focus call.
+- When the written task is insufficient, continuation is withheld. Retry,
+  Replace attachment and Return to task details remain visible; Retry is
+  disabled only when the original session file is no longer available.
+- The no-question local clarification state now has an explicit “Continue to
+  design focus” action, removing the underlying dead-end class.
+
+### Tested
+
+- Passed 58 static, schema, safeguard, compatibility, privacy, image,
+  fallback, rendering and workflow tests, including the exact external
+  uppercase image.
+- Passed TypeScript type checking, lint and the production build.
+- Confirmed the exact image produced a non-black, readable 1,536 × 2,048
+  preview after orientation-aware preparation. Rotate right produced a
+  2,048 × 1,536 processing copy.
+- Confirmed the exact rotated image produced a 378,818-byte multipart request,
+  reached clarification and returned an aligned source digest.
+- Forced the first request to fail, then confirmed Retry used the retained
+  source and completed successfully.
+- Forced attachment failure with a lowercase `.jpg`, then confirmed text-only
+  continuation completed the design focus with no source digest and an
+  explicit attachment-not-used state.
+- Confirmed the insufficient-description gate, retained-file Retry contract,
+  EXIF-aware decode contract, local-storage exclusion and final-plan exclusion.
+- No raw image bytes, Base64 data or source content were written to application
+  logs or retained in local storage.
+
+### Compatibility and boundary confirmation
+
+- The browser-local schema and storage key remain `0.1`.
+  `sourceAttachment.notUsedForDesign` is optional, so Stage 2.5A/C and earlier
+  Stage 2.5B drafts continue to render.
+- The existing clarification, design-focus and moments endpoints and prompt
+  version remain unchanged. No extraction call, OCR service, database, durable
+  file store, authentication change or learner record was added.
+- No capability-assurance, automated-assessment, scoring, confidence or
+  AI-detection claim was introduced.
+- Stage 2.5B remains open for owner review. Stage 3 has not begun.

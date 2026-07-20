@@ -953,6 +953,15 @@ input[aria-invalid="true"] {
   padding: 14px 16px;
 }
 
+.attachment-preview {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  height: 116px;
+  object-fit: contain;
+  width: 154px;
+}
+
 .attachment-summary > div:first-child {
   min-width: 0;
 }
@@ -971,6 +980,7 @@ input[aria-invalid="true"] {
 
 .attachment-summary > div:last-child {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -988,6 +998,39 @@ input[aria-invalid="true"] {
 
 .attachment-retention-note {
   margin: -12px 0 22px;
+}
+
+.attachment-recovery {
+  align-items: flex-start;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 22px 24px;
+}
+
+.attachment-recovery h2 {
+  font-size: 1.125rem;
+  margin: 0 0 5px;
+}
+
+.attachment-recovery p {
+  margin: 5px 0 0;
+}
+
+.attachment-recovery-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: flex-end;
+}
+
+.attachment-not-used {
+  margin-top: 18px;
 }
 
 .change-confirmation,
@@ -2377,14 +2420,22 @@ label > em,
 
   .file-drop,
   .attachment-summary,
+  .attachment-recovery,
   .stale-design-note {
     align-items: stretch;
     flex-direction: column;
   }
 
   .change-confirmation > div,
-  .attachment-summary > div:last-child {
+  .attachment-summary > div:last-child,
+  .attachment-recovery-actions {
     flex-direction: column;
+  }
+
+  .attachment-preview {
+    height: auto;
+    max-height: 220px;
+    width: 100%;
   }
 
   .action-row {

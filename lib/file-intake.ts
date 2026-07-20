@@ -2,6 +2,8 @@ import type { SourceAttachment } from "./types";
 
 export const FILE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 export const FILE_UPLOAD_MAX_LABEL = "8 MB";
+export const DOCUMENT_UPLOAD_MAX_BYTES = 900 * 1024;
+export const DOCUMENT_UPLOAD_MAX_LABEL = "900 KB";
 export const FILE_ACCEPT =
   ".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png";
 
@@ -56,10 +58,18 @@ export function validateFileMetadata(file: {
         "This file is empty. Replace it with a readable copy; your entered task details are unchanged.",
     };
   }
-  if (file.size > FILE_UPLOAD_MAX_BYTES) {
+  const extension = getSupportedFileExtension(file.name);
+  const isImage = ["jpg", "jpeg", "png"].includes(extension ?? "");
+  const maximum = isImage
+    ? FILE_UPLOAD_MAX_BYTES
+    : DOCUMENT_UPLOAD_MAX_BYTES;
+  const maximumLabel = isImage
+    ? FILE_UPLOAD_MAX_LABEL
+    : DOCUMENT_UPLOAD_MAX_LABEL;
+  if (file.size > maximum) {
     return {
       code: "file_too_large",
-      message: `This file is larger than ${FILE_UPLOAD_MAX_LABEL}. Choose a smaller copy; your entered task details are unchanged.`,
+      message: `This file is larger than ${maximumLabel}. Choose a smaller copy; your entered task details are unchanged.`,
     };
   }
   return null;

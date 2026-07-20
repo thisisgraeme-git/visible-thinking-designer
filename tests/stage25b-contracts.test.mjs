@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   attachmentMetadata,
+  DOCUMENT_UPLOAD_MAX_BYTES,
   FILE_UPLOAD_MAX_BYTES,
   validateFileBytes,
   validateFileMetadata,
@@ -70,6 +71,7 @@ test("accepts the bounded PDF, Word and image formats", () => {
     assert.equal("bytes" in metadata, false);
   }
   assert.equal(FILE_UPLOAD_MAX_BYTES, 8 * 1024 * 1024);
+  assert.equal(DOCUMENT_UPLOAD_MAX_BYTES, 900 * 1024);
 });
 
 test("rejects unsupported, oversized, empty and corrupt files without partial processing", () => {
@@ -80,7 +82,7 @@ test("rejects unsupported, oversized, empty and corrupt files without partial pr
   assert.equal(
     validateFileMetadata({
       name: "task.pdf",
-      size: FILE_UPLOAD_MAX_BYTES + 1,
+      size: DOCUMENT_UPLOAD_MAX_BYTES + 1,
     })?.code,
     "file_too_large",
   );
@@ -200,7 +202,7 @@ test("raw attachment data is absent from persisted and rendered project surfaces
     /sourceDigest|sourceAttachment|file_data|base64/,
   );
   assert.doesNotMatch(route, /console\.|logger|localStorage/);
-  assert.match(clientAttachments, /new Map<string, File>/);
+  assert.match(clientAttachments, /new Map<string, SessionAttachment>/);
   assert.match(source("lib/server/openai.ts"), /store: false/);
 });
 

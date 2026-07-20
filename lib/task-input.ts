@@ -1,5 +1,19 @@
 export const TASK_DESCRIPTION_MAX = 4000;
 
+export function hasSufficientWrittenTask(task: {
+  title: string;
+  description: string;
+  intendedCapability: string;
+}): boolean {
+  return (
+    task.title.trim().length > 0 &&
+    task.title.trim().toLowerCase() !== "untitled task" &&
+    task.description.trim().length >= 30 &&
+    task.description.length <= TASK_DESCRIPTION_MAX &&
+    task.intendedCapability.trim().length >= 15
+  );
+}
+
 export function getTaskDescriptionLimitMessage(
   description: string,
 ): string | undefined {

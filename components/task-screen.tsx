@@ -5,17 +5,25 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "./app-shell";
 import { blankProject, projectFromFixture } from "@/lib/fixtures";
 import {
+  getPreparedSessionAttachment,
   getSessionAttachment,
+  getSessionAttachmentRotation,
   removeSessionAttachment,
   setSessionAttachment,
+  setSessionAttachmentRotation,
 } from "@/lib/client-attachments";
 import {
   attachmentMetadata,
+  DOCUMENT_UPLOAD_MAX_LABEL,
   FILE_ACCEPT,
   FILE_UPLOAD_MAX_LABEL,
   formatFileSize,
+  isImageFile,
   validateFileMetadata,
 } from "@/lib/file-intake";
+import {
+  rotateQuarterTurns,
+} from "@/lib/image-preparation";
 import { createGenerationState } from "@/lib/model-state";
 import { loadProject, saveProject } from "@/lib/storage";
 import {
@@ -293,8 +301,17 @@ export function TaskScreen() {
   const [original, setOriginal] = useState<VisibleThinkingProject>();
   const [submitted, setSubmitted] = useState(false);
   const [fileError, setFileError] = useState("");
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState("");
+  const [imagePreparing, setImagePreparing] = useState(false);
   const [showChangeConfirmation, setShowChangeConfirmation] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(
+    () => () => {
+      if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+    },
+    [attachmentPreviewUrl],
+  );
 
   useEffect(() => {
     if (!projectId) return;
@@ -305,6 +322,24 @@ export function TaskScreen() {
       if (stored) {
         setProject(stored);
         setOriginal(structuredClone(stored));
+        if (
+          getSessionAttachment(stored.id) &&
+          isImageFile(stored.sourceAttachment?.filename ?? "")
+        ) {
+          setImagePreparing(true);
+          void getPreparedSessionAttachment(stored.id)
+            .then((prepared) => {
+              if (prepared) {
+                setAttachmentPreviewUrl(URL.createObjectURL(prepared));
+              }
+            })
+            .catch(() =>
+              setFileError(
+                "This photograph could not be read. Retry, replace it or remove it; your task details are unchanged.",
+              ),
+            )
+            .finally(() => setImagePreparing(false));
+        }
       }
     });
     return () => {
@@ -424,7 +459,27 @@ export function TaskScreen() {
     saveAndRegenerate();
   };
 
-  const selectFile = (file?: File) => {
+  const setPreviewFromFile = (file: File) => {
+    setAttachmentPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const refreshImagePreview = async (activeProjectId = project.id) => {
+    setImagePreparing(true);
+    try {
+      const prepared = await getPreparedSessionAttachment(activeProjectId);
+      if (prepared && isImageFile(prepared.name)) {
+        setPreviewFromFile(prepared);
+      }
+    } catch {
+      setFileError(
+        "This photograph could not be read. Retry, replace it or remove it; your task details are unchanged.",
+      );
+    } finally {
+      setImagePreparing(false);
+    }
+  };
+
+  const selectFile = async (file?: File) => {
     if (!file) return;
     const validation = validateFileMetadata(file);
     if (validation) {
@@ -441,11 +496,31 @@ export function TaskScreen() {
         sourceDigest: undefined,
       },
     }));
+    if (isImageFile(file.name)) await refreshImagePreview(project.id);
+    else setAttachmentPreviewUrl("");
+  };
+
+  const rotateImage = async (direction: "left" | "right") => {
+    const current = getSessionAttachmentRotation(project.id);
+    const next = rotateQuarterTurns(current, direction);
+    setImagePreparing(true);
+    setFileError("");
+    try {
+      const prepared = await setSessionAttachmentRotation(project.id, next);
+      if (prepared) setPreviewFromFile(prepared);
+    } catch {
+      setFileError(
+        "This photograph could not be rotated. Retry or replace it; your task details and original file remain available.",
+      );
+    } finally {
+      setImagePreparing(false);
+    }
   };
 
   const removeFile = () => {
     removeSessionAttachment(project.id);
     setFileError("");
+    setAttachmentPreviewUrl("");
     setProject((current) => ({
       ...current,
       sourceAttachment: undefined,
@@ -559,11 +634,15 @@ export function TaskScreen() {
           ) : null}
         </label>
 
-        <div className="field-group attachment-field">
+        <div
+          className="field-group attachment-field"
+          id="supporting-source-material"
+        >
           <div>
             <span className="field-label">Supporting source material</span>
             <small>
-              Optional · one PDF, DOC, DOCX, JPG, JPEG or PNG · up to{" "}
+              Optional · one PDF, DOC or DOCX up to{" "}
+              {DOCUMENT_UPLOAD_MAX_LABEL}; JPG, JPEG or PNG up to{" "}
               {FILE_UPLOAD_MAX_LABEL}
             </small>
           </div>
@@ -572,13 +651,13 @@ export function TaskScreen() {
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               event.preventDefault();
-              selectFile(event.dataTransfer.files[0]);
+              void selectFile(event.dataTransfer.files[0]);
             }}
           >
             <input
               accept={FILE_ACCEPT}
               aria-label="Attach supporting source material"
-              onChange={(event) => selectFile(event.target.files?.[0])}
+              onChange={(event) => void selectFile(event.target.files?.[0])}
               ref={fileInput}
               type="file"
             />
@@ -588,6 +667,16 @@ export function TaskScreen() {
           </div>
           {project.sourceAttachment ? (
             <div className="attachment-summary">
+              {attachmentPreviewUrl &&
+              isImageFile(project.sourceAttachment.filename) ? (
+                // This is a session-only object URL, not a deployable image asset.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  alt={`Preview of ${project.sourceAttachment.filename}`}
+                  className="attachment-preview"
+                  src={attachmentPreviewUrl}
+                />
+              ) : null}
               <div>
                 <strong>{project.sourceAttachment.filename}</strong>
                 <span>
@@ -600,11 +689,38 @@ export function TaskScreen() {
                     Processed context is available. The attachment itself was
                     not retained.
                   </small>
+                ) : project.sourceAttachment.notUsedForDesign ? (
+                  <small>
+                    This attachment was not processed or used in the current
+                    design. It is not retained with the saved draft.
+                  </small>
                 ) : null}
               </div>
-              <div>
+              <div className="attachment-actions">
+                {isImageFile(project.sourceAttachment.filename) &&
+                getSessionAttachment(project.id) ? (
+                  <>
+                    <button
+                      className="toolbar-button"
+                      disabled={imagePreparing}
+                      onClick={() => void rotateImage("left")}
+                      type="button"
+                    >
+                      Rotate left
+                    </button>
+                    <button
+                      className="toolbar-button"
+                      disabled={imagePreparing}
+                      onClick={() => void rotateImage("right")}
+                      type="button"
+                    >
+                      Rotate right
+                    </button>
+                  </>
+                ) : null}
                 <button
                   className="toolbar-button"
+                  disabled={imagePreparing}
                   onClick={() => fileInput.current?.click()}
                   type="button"
                 >
@@ -612,6 +728,7 @@ export function TaskScreen() {
                 </button>
                 <button
                   className="toolbar-button"
+                  disabled={imagePreparing}
                   onClick={removeFile}
                   type="button"
                 >
@@ -964,10 +1081,15 @@ export function TaskScreen() {
         </LinkButton>
         <button
           className="button primary"
+          disabled={imagePreparing}
           onClick={continueToDiagnosis}
           type="button"
         >
-          {original ? "Save task details" : "Clarify this task"}{" "}
+          {imagePreparing
+            ? "Preparing photograph…"
+            : original
+              ? "Save task details"
+              : "Clarify this task"}{" "}
           <span aria-hidden="true">→</span>
         </button>
       </div>

@@ -141,6 +141,8 @@ export interface SourceAttachment {
   mimeType: string;
   size: number;
   processed: boolean;
+  /** Set only when the tutor explicitly continued from their written task. */
+  notUsedForDesign?: boolean;
 }
 
 export interface TaskDiagnosis {

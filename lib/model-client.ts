@@ -6,7 +6,10 @@ import type {
   MomentsOutput,
   VisibleThinkingProject,
 } from "./types";
-import { getSessionAttachment } from "./client-attachments";
+import {
+  getPreparedSessionAttachment,
+  getSessionAttachment,
+} from "./client-attachments";
 
 async function postModelStage<T>(
   endpoint: string,
@@ -45,7 +48,9 @@ const unknownFailure = (): ModelFailure => ({
   },
 });
 
-export function requestClarification(project: VisibleThinkingProject) {
+export async function requestClarification(
+  project: VisibleThinkingProject,
+): Promise<ModelResult<ClarifyOutput>> {
   const body = {
     source: project.source,
     task: project.task,
@@ -55,7 +60,21 @@ export function requestClarification(project: VisibleThinkingProject) {
   if (!attachment) {
     return postModelStage<ClarifyOutput>("/api/design/clarify", body);
   }
-  return postClarificationWithAttachment(body, attachment);
+  try {
+    const prepared = await getPreparedSessionAttachment(project.id);
+    if (!prepared) return unknownFailure();
+    return postClarificationWithAttachment(body, prepared);
+  } catch {
+    return {
+      ok: false,
+      error: {
+        code: "corrupt_file",
+        message:
+          "The photograph could not be read. Retry, replace the attachment or return to your saved task details.",
+        retryable: true,
+      },
+    };
+  }
 }
 
 export function requestDiagnosis(project: VisibleThinkingProject) {
@@ -85,7 +104,8 @@ async function postClarificationWithAttachment(
       method: "POST",
       body: form,
     });
-    const payload = (await response.json()) as ModelResult<ClarifyOutput>;
+    const payload = await readAttachmentResponse(response);
+    if (!payload) return unknownFailure();
     if (!response.ok && payload.ok) return unknownFailure();
     return payload;
   } catch {
@@ -99,4 +119,24 @@ async function postClarificationWithAttachment(
       },
     };
   }
+}
+
+async function readAttachmentResponse(
+  response: Response,
+): Promise<ModelResult<ClarifyOutput> | undefined> {
+  if (response.headers.get("content-type")?.includes("application/json")) {
+    return (await response.json()) as ModelResult<ClarifyOutput>;
+  }
+  if (response.status === 413) {
+    return {
+      ok: false,
+      error: {
+        code: "file_too_large",
+        message:
+          "The hosted service rejected the prepared attachment as too large. Your task details and original file remain available for Retry or Replace.",
+        retryable: true,
+      },
+    };
+  }
+  return undefined;
 }

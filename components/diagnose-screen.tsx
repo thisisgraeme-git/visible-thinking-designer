@@ -11,6 +11,8 @@ import {
 import { requestClarification, requestDiagnosis } from "@/lib/model-client";
 import { updateGenerationStage } from "@/lib/model-state";
 import { loadProject, saveProject } from "@/lib/storage";
+import { hasSufficientWrittenTask } from "@/lib/task-input";
+import { getTaskSummary } from "@/lib/task-summary";
 import type {
   ClarificationQuestion,
   TaskDiagnosis,
@@ -127,7 +129,11 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           promptVersion: result.meta.promptVersion,
         },
         sourceAttachment: stageUpdated.sourceAttachment
-          ? { ...stageUpdated.sourceAttachment, processed: true }
+          ? {
+              ...stageUpdated.sourceAttachment,
+              processed: true,
+              notUsedForDesign: false,
+            }
           : undefined,
       });
       removeSessionAttachment(succeeded.id);
@@ -182,6 +188,8 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
     clarifyStatus === "loading" || clarifyStatus === "failed";
   const diagnoseBlocked =
     diagnoseStatus === "loading" || diagnoseStatus === "failed";
+  const retainedAttachment = Boolean(getSessionAttachment(project.id));
+  const canContinueWithoutAttachment = hasSufficientWrittenTask(project.task);
 
   const commitQuestion = async (skipped: boolean) => {
     const nextQuestions = questions.map((question, index) =>
@@ -214,6 +222,48 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
     );
     setProject(updated);
     setPhase(stage === "clarify" ? "clarify" : "diagnose");
+  };
+
+  const continueWithoutAttachment = async () => {
+    if (!project.sourceAttachment || !canContinueWithoutAttachment) return;
+    const summaryProject: VisibleThinkingProject = {
+      ...project,
+      clarification: {
+        ...project.clarification,
+        taskSummary: undefined,
+        taskReflection: undefined,
+      },
+    };
+    const updated = saveProject({
+      ...updateGenerationStage(project, "clarify", "fallback"),
+      clarification: {
+        ...project.clarification,
+        taskSummary: getTaskSummary(summaryProject),
+        sourceDigest: undefined,
+        questions: [],
+        completed: true,
+      },
+      sourceAttachment: {
+        ...project.sourceAttachment,
+        processed: false,
+        notUsedForDesign: true,
+      },
+    });
+    setProject(updated);
+    setPhase("diagnose");
+    await generateDiagnosis(updated);
+  };
+
+  const continueFromNoQuestions = async () => {
+    const updated = saveProject({
+      ...project,
+      clarification: {
+        ...project.clarification,
+        completed: true,
+      },
+    });
+    setProject(updated);
+    await generateDiagnosis(updated);
   };
 
   const updateDiagnosis = <K extends keyof TaskDiagnosis>(
@@ -262,11 +312,15 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
               : undefined
           }
           onFallback={
-            getSessionAttachment(project.id)
+            project.sourceAttachment
               ? undefined
               : () => continueWithLocalDraft("clarify")
           }
-          onRetry={() => void generateClarification(project)}
+          onRetry={
+            project.sourceAttachment
+              ? undefined
+              : () => void generateClarification(project)
+          }
           status={clarifyStatus}
         />
       ) : null}
@@ -274,18 +328,67 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
       {phase === "clarify" &&
       clarifyStatus === "failed" &&
       project.sourceAttachment ? (
-        <div className="action-row">
-          <p className="attachment-recovery-note">
-            {getSessionAttachment(project.id)
-              ? `${project.sourceAttachment.filename} remains selected for an in-session retry.`
-              : "The original attachment was not retained, but your entered task details are still saved."}
-          </p>
-          <a
-            className="button secondary"
-            href={`/design/new?projectId=${project.id}`}
-          >
-            Review or replace attachment
-          </a>
+        <section
+          aria-labelledby="attachment-recovery-title"
+          className="attachment-recovery"
+        >
+          <div>
+            <h2 id="attachment-recovery-title">Choose how to recover.</h2>
+            <p className="attachment-recovery-note">
+              {retainedAttachment
+                ? `${project.sourceAttachment.filename} remains selected for an in-session Retry or Replace.`
+                : "The original attachment was not retained, but your entered task details are still saved."}
+            </p>
+            {!canContinueWithoutAttachment ? (
+              <p>
+                Add a clear task name, core task description and intended
+                capability before continuing without source material.
+              </p>
+            ) : null}
+          </div>
+          <div className="attachment-recovery-actions">
+            {canContinueWithoutAttachment ? (
+              <button
+                autoFocus
+                className="button primary"
+                onClick={() => void continueWithoutAttachment()}
+                type="button"
+              >
+                Continue without using the attachment
+              </button>
+            ) : null}
+            <button
+              className="button secondary"
+              disabled={!retainedAttachment}
+              onClick={() => void generateClarification(project)}
+              type="button"
+            >
+              Retry
+            </button>
+            <a
+              className="button secondary"
+              href={`/design/new?projectId=${project.id}#supporting-source-material`}
+            >
+              Replace attachment
+            </a>
+            <a
+              className="button text-button"
+              href={`/design/new?projectId=${project.id}`}
+            >
+              Return to task details
+            </a>
+          </div>
+        </section>
+      ) : null}
+
+      {project.sourceAttachment?.notUsedForDesign ? (
+        <div className="guidance-banner attachment-not-used" role="status">
+          <strong>Attachment not processed.</strong>
+          This design uses the tutor’s task name, written description and
+          intended capability.{" "}
+          {retainedAttachment
+            ? "The original attachment remains available only in this browser session for Retry or Replace."
+            : "The original attachment was not retained with the saved draft."}
         </div>
       ) : null}
 
@@ -306,6 +409,7 @@ export function DiagnoseScreen({ projectId }: { projectId: string }) {
           index={questionIndex}
           onAnswer={setAnswer}
           onCommit={commitQuestion}
+          onContinue={continueFromNoQuestions}
           summary={
             project.clarification.taskSummary ??
             project.clarification.taskReflection
@@ -438,6 +542,7 @@ function ClarifyPhase({
   answer,
   onAnswer,
   onCommit,
+  onContinue,
   onSummaryChange,
 }: {
   summary?: string;
@@ -447,6 +552,7 @@ function ClarifyPhase({
   answer: string;
   onAnswer: (value: string) => void;
   onCommit: (skipped: boolean) => Promise<void>;
+  onContinue: () => Promise<void>;
   onSummaryChange: (value: string) => void;
 }) {
   if (!currentQuestion) {
@@ -459,6 +565,15 @@ function ClarifyPhase({
             summary || "Your task has enough detail to set a design focus."
           }
         />
+        <div className="question-actions">
+          <button
+            className="button primary"
+            onClick={() => void onContinue()}
+            type="button"
+          >
+            Continue to design focus <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </section>
     );
   }
