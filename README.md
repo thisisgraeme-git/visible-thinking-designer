@@ -1,15 +1,18 @@
 # Visible Thinking Designer
 
-Visible Thinking Designer is a tutor-facing learning-design workbench for post-school tertiary and vocational education.
+Visible Thinking Designer is a tutor-facing learning-design workbench for tertiary and vocational education.
 
 It helps an educator redesign one real task so consequential learner thinking becomes visible across the learning journey—not only in the finished product.
+
+**Live application:** [visible-thinking-designer.thisisgraeme.chatgpt.site](https://visible-thinking-designer.thisisgraeme.chatgpt.site)
 
 ## Current build status
 
 Stages 1–3 are complete. Gate 2.5B closed after owner validation on 21 July
-2026, and the current owner-only deployment is the submission candidate for
-final code-lock review. The model contracts use prompt version
-`vtd-2026-07-20.6`.
+2026. The public submission candidate is deployed at
+[visible-thinking-designer.thisisgraeme.chatgpt.site](https://visible-thinking-designer.thisisgraeme.chatgpt.site).
+The deployed application code corresponds to locked application commit
+`097312c`. The model contracts use prompt version `vtd-2026-07-20.6`.
 
 Included:
 
